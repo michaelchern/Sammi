@@ -1,7 +1,7 @@
-#include "runtime/core/math/math.h"
+﻿#include "runtime/core/math/math.h"
 #include "runtime/core/math/matrix4.h"
 
-namespace Piccolo
+namespace Sammi
 {
     Math::AngleUnit Math::k_AngleUnit;
 

@@ -1,29 +1,33 @@
-#pragma once
+﻿#pragma once
 
-#include "runtime/core/math/random.h"
+#include "runtime/core/math/random.h"  // 随机数相关功能
 
-#include <algorithm>
-#include <cmath>
-#include <limits>
+#include <algorithm>                   // 标准算法（如min、max）
+#include <cmath>                       // 数学函数（sin, cos等）
+#include <limits>                      // 数值范围限制（如FLT_EPSILON）
 
+// 浮点数比较宏：判断两个浮点数是否在可接受的误差范围内相等
+// 公式：|x - y| < ε * max(1, |x|, |y|)
 #define CMP(x, y) (fabsf(x - y) < FLT_EPSILON * fmaxf(1.0f, fmaxf(fabsf(x), fabsf(y))))
 
-namespace Piccolo
+namespace Sammi
 {
-    static const float Math_POS_INFINITY = std::numeric_limits<float>::infinity();
-    static const float Math_NEG_INFINITY = -std::numeric_limits<float>::infinity();
-    static const float Math_PI           = 3.14159265358979323846264338327950288f;
-    static const float Math_ONE_OVER_PI  = 1.0f / Math_PI;
-    static const float Math_TWO_PI       = 2.0f * Math_PI;
-    static const float Math_HALF_PI      = 0.5f * Math_PI;
-    static const float Math_fDeg2Rad     = Math_PI / 180.0f;
-    static const float Math_fRad2Deg     = 180.0f / Math_PI;
-    static const float Math_LOG2         = log(2.0f);
-    static const float Math_EPSILON      = 1e-6f;
+    // 数学常量定义
+    static const float Math_POS_INFINITY = std::numeric_limits<float>::infinity();   // 正无穷
+    static const float Math_NEG_INFINITY = -std::numeric_limits<float>::infinity();  // 负无穷
+    static const float Math_PI           = 3.14159265358979323846264338327950288f;   // π
+    static const float Math_ONE_OVER_PI  = 1.0f / Math_PI;                           // 1/π
+    static const float Math_TWO_PI       = 2.0f * Math_PI;                           // 2π
+    static const float Math_HALF_PI      = 0.5f * Math_PI;                           // π/2
+    static const float Math_fDeg2Rad     = Math_PI / 180.0f;                         // 角度转弧度因子
+    static const float Math_fRad2Deg     = 180.0f / Math_PI;                         // 弧度转角度因子
+    static const float Math_LOG2         = log(2.0f);                                // ln(2)
+    static const float Math_EPSILON      = 1e-6f;                                    // 自定义小量
 
-    static const float Float_EPSILON  = FLT_EPSILON;
-    static const float Double_EPSILON = DBL_EPSILON;
+    static const float Float_EPSILON  = FLT_EPSILON;  // 单精度浮点数最小可识别差异
+    static const float Double_EPSILON = DBL_EPSILON;  // 双精度浮点数最小可识别差异
 
+    // 前置声明（角度和向量相关类）
     class Radian;
     class Angle;
     class Degree;
@@ -35,28 +39,35 @@ namespace Piccolo
     class Matrix4x4;
     class Quaternion;
 
+    // 弧度类（表示角度以弧度为单位）
     class Radian
     {
-        float m_rad;
+        float m_rad;  // 弧度值
 
     public:
-        explicit Radian(float r = 0) : m_rad(r) {}
-        explicit Radian(const Degree& d);
-        Radian& operator=(float f)
+        explicit Radian(float r = 0) : m_rad(r) {}  // 显式构造函数（浮点数）
+        explicit Radian(const Degree& d);           // 显式构造函数（角度制）
+        Radian& operator=(float f)                  // 赋值操作符（浮点数）
         {
             m_rad = f;
             return *this;
         }
-        Radian& operator=(const Degree& d);
+        Radian& operator=(const Degree& d);         // 赋值操作符（角度制）
 
+        // 获取弧度值
         float valueRadians() const { return m_rad; }
-        float valueDegrees() const; // see bottom of this file
+        // 将弧度转换为角度（实现于文件底部）
+        float valueDegrees() const;
+        // 将弧度转换为当前角度单位（全局设置）的值
         float valueAngleUnits() const;
 
-        void setValue(float f) { m_rad = f; }
+        void setValue(float f) { m_rad = f; }  // 设置弧度值
 
+        // 一元+运算符
         const Radian& operator+() const { return *this; }
+        // 加法运算符（与另一个弧度相加）
         Radian        operator+(const Radian& r) const { return Radian(m_rad + r.m_rad); }
+        // 加法运算符（与角度相加）
         Radian        operator+(const Degree& d) const;
         Radian&       operator+=(const Radian& r)
         {

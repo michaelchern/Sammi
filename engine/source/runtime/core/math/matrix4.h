@@ -1,51 +1,29 @@
-#pragma once
+﻿#pragma once
 
-#include "runtime/core/math/math.h"
-#include "runtime/core/math/matrix3.h"
-#include "runtime/core/math/quaternion.h"
-#include "runtime/core/math/vector3.h"
-#include "runtime/core/math/vector4.h"
+#include "runtime/core/math/math.h"        // 基础数学函数
+#include "runtime/core/math/matrix3.h"     // 3x3矩阵支持
+#include "runtime/core/math/quaternion.h"  // 四元数支持
+#include "runtime/core/math/vector3.h"     // 三维向量
+#include "runtime/core/math/vector4.h"     // 四维向量
 
-namespace Piccolo
+// 注意：所有代码改编自Wild Magic 0.2矩阵数学库
+// http://www.geometrictools.com/
+
+// 坐标系说明：
+// 使用右手坐标系
+// 矩阵乘法顺序：右乘（M3 * M2 * M1 * V）
+// 与OpenGL一致，与DirectX相反（引擎内部处理差异）
+
+namespace Sammi
 {
-    /** Class encapsulating a standard 4x4 homogeneous matrix.
-    @remarks
-    CHAOS uses column vectors when applying matrix multiplications,
-    This means a vector is represented as a single column, 4-row
-    matrix. This has the effect that the transformations implemented
-    by the matrices happens right-to-left e.g. if vector V is to be
-    transformed by M1 then M2 then M3, the calculation would be
-    M3 * M2 * M1 * V. The order that matrices are concatenated is
-    vital since matrix multiplication is not commutative, i.e. you
-    can get a different result if you concatenate in the wrong order.
-    @par
-    The use of column vectors and right-to-left ordering is the
-    standard in most mathematical texts, and is the same as used in
-    OpenGL. It is, however, the opposite of Direct3D, which has
-    inexplicably chosen to differ from the accepted standard and uses
-    row vectors and left-to-right matrix multiplication.
-    @par
-    CHAOS deals with the differences between D3D and OpenGL etc.
-    internally when operating through different render systems. CHAOS
-    users only need to conform to standard maths conventions, i.e.
-    right-to-left matrix multiplication, (CHAOS transposes matrices it
-    passes to D3D to compensate).
-    @par
-    The generic form M * V which shows the layout of the matrix
-    entries is shown below:
-    <pre>
-    [ m[0][0]  m[0][1]  m[0][2]  m[0][3] ]   {x}
-    | m[1][0]  m[1][1]  m[1][2]  m[1][3] | * {y}
-    | m[2][0]  m[2][1]  m[2][2]  m[2][3] |   {z}
-    [ m[3][0]  m[3][1]  m[3][2]  m[3][3] ]   {1}
-    </pre>
-    */
+    // 反射系统专用的4x4矩阵结构（16个独立浮点成员）
     REFLECTION_TYPE(Matrix4x4_)
     CLASS(Matrix4x4_, Fields)
     {
         REFLECTION_BODY(Matrix4x4_);
 
     public:
+        // 默认初始化为单位矩阵
         Matrix4x4_() {}
         float v0 {1.f};
         float v1 {0};
@@ -64,17 +42,17 @@ namespace Piccolo
         float v14 {0};
         float v15 {1.f};
     };
+
+    /** 4x4齐次变换矩阵类（用于3D图形变换） */
     class Matrix4x4
     {
     public:
-        /// The matrix entries, indexed by [row][col]
+        // 矩阵数据存储（4x4二维数组，行优先：[行][列]）
         float m_mat[4][4];
 
     public:
-        /** Default constructor.
-        @note
-        It does <b>NOT</b> initialize the matrix for efficiency.
-        */
+        /** 构造函数 */
+        // 从反射结构体构造
         Matrix4x4(const Matrix4x4_& mat)
         {
             m_mat[0][0] = mat.v0;

@@ -1,55 +1,40 @@
+﻿
 #include "runtime/core/math/matrix3.h"
 
-namespace Piccolo
+namespace Sammi
 {
+    // 常量定义：零矩阵和单位矩阵
     const Matrix3x3 Matrix3x3::ZERO(0, 0, 0, 0, 0, 0, 0, 0, 0);
     const Matrix3x3 Matrix3x3::IDENTITY(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
     //-----------------------------------------------------------------------
+    // 设置矩阵的指定列
+    // 参数：col_index - 列索引（0,1,2），vec - 要设置的列向量
     void Matrix3x3::setColumn(size_t col_index, const Vector3& vec)
     {
-        m_mat[0][col_index] = vec.x;
-        m_mat[1][col_index] = vec.y;
-        m_mat[2][col_index] = vec.z;
+        m_mat[0][col_index] = vec.x;  // 设置第一行对应列的元素
+        m_mat[1][col_index] = vec.y;  // 设置第二行对应列的元素
+        m_mat[2][col_index] = vec.z;  // 设置第三行对应列的元素
     }
+
     //-----------------------------------------------------------------------
+    // 通过三个正交轴向量构建矩阵
+    // 参数：x_axis - X轴向量，y_axis - Y轴向量，z_axis - Z轴向量
     void Matrix3x3::fromAxes(const Vector3& x_axis, const Vector3& y_axis, const Vector3& z_axis)
     {
-        setColumn(0, x_axis);
-        setColumn(1, y_axis);
-        setColumn(2, z_axis);
+        setColumn(0, x_axis);  // 第一列为X轴
+        setColumn(1, y_axis);  // 第二列为Y轴
+        setColumn(2, z_axis);  // 第三列为Z轴
     }
 
+    //-----------------------------------------------------------------------
+    // 计算矩阵的QDU分解（正交-对角-上三角分解）
+    // 分解为：旋转矩阵(Q)、缩放矩阵(D)、错切矩阵(U)
+    // 参数：out_Q - 输出的正交矩阵，out_D - 输出的缩放向量，out_U - 输出的错切向量
     void Matrix3x3::calculateQDUDecomposition(Matrix3x3& out_Q, Vector3& out_D, Vector3& out_U) const
     {
-        // Factor M = QR = QDU where Q is orthogonal, D is diagonal,
-        // and U is upper triangular with ones on its diagonal.  Algorithm uses
-        // Gram-Schmidt orthogonalization (the QR algorithm).
-        //
-        // If M = [ m0 | m1 | m2 ] and Q = [ q0 | q1 | q2 ], then
-        //
-        //   q0 = m0/|m0|
-        //   q1 = (m1-(q0*m1)q0)/|m1-(q0*m1)q0|
-        //   q2 = (m2-(q0*m2)q0-(q1*m2)q1)/|m2-(q0*m2)q0-(q1*m2)q1|
-        //
-        // where |V| indicates length of vector V and A*B indicates dot
-        // product of vectors A and B.  The matrix R has entries
-        //
-        //   r00 = q0*m0  r01 = q0*m1  r02 = q0*m2
-        //   r10 = 0      r11 = q1*m1  r12 = q1*m2
-        //   r20 = 0      r21 = 0      r22 = q2*m2
-        //
-        // so D = diag(r00,r11,r22) and U has entries u01 = r01/r00,
-        // u02 = r02/r00, and u12 = r12/r11.
-
-        // Q = rotation
-        // D = scaling
-        // U = shear
-
-        // D stores the three diagonal entries r00, r11, r22
-        // U stores the entries U[0] = u01, U[1] = u02, U[2] = u12
-
-        // build orthogonal matrix Q
+        // 使用Gram-Schmidt正交化过程计算Q矩阵
+        // 第一步：归一化第一列作为Q的第一列
         float inv_length = m_mat[0][0] * m_mat[0][0] + m_mat[1][0] * m_mat[1][0] + m_mat[2][0] * m_mat[2][0];
         if (!Math::realEqual(inv_length, 0))
             inv_length = Math::invSqrt(inv_length);
@@ -58,6 +43,7 @@ namespace Piccolo
         out_Q[1][0] = m_mat[1][0] * inv_length;
         out_Q[2][0] = m_mat[2][0] * inv_length;
 
+        // 第二步：计算Q的第二列（减去与第一列的投影分量后归一化）
         float dot   = out_Q[0][0] * m_mat[0][1] + out_Q[1][0] * m_mat[1][1] + out_Q[2][0] * m_mat[2][1];
         out_Q[0][1] = m_mat[0][1] - dot * out_Q[0][0];
         out_Q[1][1] = m_mat[1][1] - dot * out_Q[1][0];
@@ -70,6 +56,7 @@ namespace Piccolo
         out_Q[1][1] *= inv_length;
         out_Q[2][1] *= inv_length;
 
+        // 第三步：计算Q的第三列（减去与前两列的投影分量后归一化）
         dot         = out_Q[0][0] * m_mat[0][2] + out_Q[1][0] * m_mat[1][2] + out_Q[2][0] * m_mat[2][2];
         out_Q[0][2] = m_mat[0][2] - dot * out_Q[0][0];
         out_Q[1][2] = m_mat[1][2] - dot * out_Q[1][0];
@@ -86,19 +73,20 @@ namespace Piccolo
         out_Q[1][2] *= inv_length;
         out_Q[2][2] *= inv_length;
 
-        // guarantee that orthogonal matrix has determinant 1 (no reflections)
+        // 确保正交矩阵行列式为1（无反射变换）
         float det = out_Q[0][0] * out_Q[1][1] * out_Q[2][2] + out_Q[0][1] * out_Q[1][2] * out_Q[2][0] +
                     out_Q[0][2] * out_Q[1][0] * out_Q[2][1] - out_Q[0][2] * out_Q[1][1] * out_Q[2][0] -
                     out_Q[0][1] * out_Q[1][0] * out_Q[2][2] - out_Q[0][0] * out_Q[1][2] * out_Q[2][1];
 
         if (det < 0.0)
         {
+            // 行列式为负时翻转所有元素符号
             for (size_t row_index = 0; row_index < 3; row_index++)
                 for (size_t rol_index = 0; rol_index < 3; rol_index++)
                     out_Q[row_index][rol_index] = -out_Q[row_index][rol_index];
         }
 
-        // build "right" matrix R
+        // 计算上三角矩阵R（R = Q^T * M）
         Matrix3x3 R;
         R[0][0] = out_Q[0][0] * m_mat[0][0] + out_Q[1][0] * m_mat[1][0] + out_Q[2][0] * m_mat[2][0];
         R[0][1] = out_Q[0][0] * m_mat[0][1] + out_Q[1][0] * m_mat[1][1] + out_Q[2][0] * m_mat[2][1];
@@ -107,111 +95,94 @@ namespace Piccolo
         R[1][2] = out_Q[0][1] * m_mat[0][2] + out_Q[1][1] * m_mat[1][2] + out_Q[2][1] * m_mat[2][2];
         R[2][2] = out_Q[0][2] * m_mat[0][2] + out_Q[1][2] * m_mat[1][2] + out_Q[2][2] * m_mat[2][2];
 
-        // the scaling component
+        // 提取对角缩放分量（D矩阵对角线）
         out_D[0] = R[0][0];
         out_D[1] = R[1][1];
         out_D[2] = R[2][2];
 
-        // the shear component
+        // 计算错切分量（U矩阵的非对角线元素）
         float inv_d0 = 1.0f / out_D[0];
-        out_U[0]     = R[0][1] * inv_d0;
-        out_U[1]     = R[0][2] * inv_d0;
-        out_U[2]     = R[1][2] / out_D[1];
+        out_U[0]     = R[0][1] * inv_d0;    // U01
+        out_U[1]     = R[0][2] * inv_d0;    // U02
+        out_U[2]     = R[1][2] / out_D[1];  // U12
     }
 
+    //-----------------------------------------------------------------------
+    // 从旋转矩阵提取旋转轴和旋转角度
+    // 参数：axis - 输出的旋转轴向量，radian - 输出的旋转弧度
     void Matrix3x3::toAngleAxis(Vector3& axis, Radian& radian) const
     {
-        // Let (x,y,z) be the unit-length axis and let A be an angle of rotation.
-        // The rotation matrix is R = I + sin(A)*P + (1-cos(A))*P^2 where
-        // I is the identity and
-        //
-        //       +-        -+
-        //   P = |  0 -z +y |
-        //       | +z  0 -x |
-        //       | -y +x  0 |
-        //       +-        -+
-        //
-        // If A > 0, R represents a counterclockwise rotation about the axis in
-        // the sense of looking from the tip of the axis vector towards the
-        // origin.  Some algebra will show that
-        //
-        //   cos(A) = (trace(R)-1)/2  and  R - R^t = 2*sin(A)*P
-        //
-        // In the event that A = pi, R-R^t = 0 which prevents us from extracting
-        // the axis through P.  Instead note that R = I+2*P^2 when A = pi, so
-        // P^2 = (R-I)/2.  The diagonal entries of P^2 are x^2-1, y^2-1, and
-        // z^2-1.  We can solve these for axis (x,y,z).  Because the angle is pi,
-        // it does not matter which sign you choose on the square roots.
-
+        // 计算旋转角度（通过矩阵的迹）
         float trace = m_mat[0][0] + m_mat[1][1] + m_mat[2][2];
         float cos_v = 0.5f * (trace - 1.0f);
-        radian      = Math::acos(cos_v); // in [0,PI]
+        radian      = Math::acos(cos_v);  // 角度范围[0, PI]
 
         if (radian > Radian(0.0))
         {
             if (radian < Radian(Math_PI))
             {
-                axis.x = m_mat[2][1] - m_mat[1][2];
-                axis.y = m_mat[0][2] - m_mat[2][0];
-                axis.z = m_mat[1][0] - m_mat[0][1];
-                axis.normalise();
+                // 常规情况：通过反对称矩阵分量计算旋转轴
+                axis.x = m_mat[2][1] - m_mat[1][2];  // Ryz - Rzy
+                axis.y = m_mat[0][2] - m_mat[2][0];  // Rzx - Rxz
+                axis.z = m_mat[1][0] - m_mat[0][1];  // Rxy - Ryx
+                axis.normalise();  // 归一化轴向量
             }
             else
             {
-                // angle is PI
+                // 处理角度为PI的特殊情况（旋转180度）
                 float half_inv;
                 if (m_mat[0][0] >= m_mat[1][1])
                 {
-                    // r00 >= r11
                     if (m_mat[0][0] >= m_mat[2][2])
                     {
-                        // r00 is maximum diagonal term
+                        // X轴分量最大
                         axis.x   = 0.5f * Math::sqrt(m_mat[0][0] - m_mat[1][1] - m_mat[2][2] + 1.0f);
                         half_inv = 0.5f / axis.x;
-                        axis.y   = half_inv * m_mat[0][1];
-                        axis.z   = half_inv * m_mat[0][2];
+                        axis.y   = half_inv * m_mat[0][1];  // 从矩阵元素恢复Y分量
+                        axis.z   = half_inv * m_mat[0][2];  // 从矩阵元素恢复Z分量
                     }
                     else
                     {
-                        // r22 is maximum diagonal term
+                        // Z轴分量最大
                         axis.z   = 0.5f * Math::sqrt(m_mat[2][2] - m_mat[0][0] - m_mat[1][1] + 1.0f);
                         half_inv = 0.5f / axis.z;
-                        axis.x   = half_inv * m_mat[0][2];
-                        axis.y   = half_inv * m_mat[1][2];
+                        axis.x   = half_inv * m_mat[0][2];  // 从矩阵元素恢复X分量
+                        axis.y   = half_inv * m_mat[1][2];  // 从矩阵元素恢复Y分量
                     }
                 }
                 else
                 {
-                    // r11 > r00
                     if (m_mat[1][1] >= m_mat[2][2])
                     {
-                        // r11 is maximum diagonal term
+                        // Y轴分量最大
                         axis.y   = 0.5f * Math::sqrt(m_mat[1][1] - m_mat[0][0] - m_mat[2][2] + 1.0f);
                         half_inv = 0.5f / axis.y;
-                        axis.x   = half_inv * m_mat[0][1];
-                        axis.z   = half_inv * m_mat[1][2];
+                        axis.x   = half_inv * m_mat[0][1];  // 从矩阵元素恢复X分量
+                        axis.z   = half_inv * m_mat[1][2];  // 从矩阵元素恢复Z分量
                     }
                     else
                     {
-                        // r22 is maximum diagonal term
+                        // Z轴分量最大
                         axis.z   = 0.5f * Math::sqrt(m_mat[2][2] - m_mat[0][0] - m_mat[1][1] + 1.0f);
                         half_inv = 0.5f / axis.z;
-                        axis.x   = half_inv * m_mat[0][2];
-                        axis.y   = half_inv * m_mat[1][2];
+                        axis.x   = half_inv * m_mat[0][2];  // 从矩阵元素恢复X分量
+                        axis.y   = half_inv * m_mat[1][2];  // 从矩阵元素恢复Y分量
                     }
                 }
             }
         }
         else
         {
-            // The angle is 0 and the matrix is the identity.  Any axis will
-            // work, so just use the x-axis.
+            // 角度为0（单位矩阵），返回默认X轴
             axis.x = 1.0;
             axis.y = 0.0;
             axis.z = 0.0;
         }
     }
+
     //-----------------------------------------------------------------------
+    // 从旋转轴和角度构建旋转矩阵
+    // 参数：axis - 旋转轴向量（需归一化），radian - 旋转弧度
     void Matrix3x3::fromAngleAxis(const Vector3& axis, const Radian& radian)
     {
         float cos_v         = Math::cos(radian);
@@ -227,14 +198,15 @@ namespace Piccolo
         float y_sin_v       = axis.y * sin_v;
         float z_sinv        = axis.z * sin_v;
 
-        m_mat[0][0] = x2 * one_minus_cos + cos_v;
-        m_mat[0][1] = xym - z_sinv;
-        m_mat[0][2] = xzm + y_sin_v;
-        m_mat[1][0] = xym + z_sinv;
+        // 使用罗德里格斯旋转公式构建矩阵
+        m_mat[0][0] = x2 * one_minus_cos + cos_v;  
+        m_mat[0][1] = xym - z_sinv;                // 旋转项：xy(1-cosθ) - zsinθ
+        m_mat[0][2] = xzm + y_sin_v;               // 旋转项：xz(1-cosθ) + ysinθ
+        m_mat[1][0] = xym + z_sinv;                // 旋转项：xy(1-cosθ) + zsinθ
         m_mat[1][1] = y2 * one_minus_cos + cos_v;
-        m_mat[1][2] = yzm - x_sin_v;
-        m_mat[2][0] = xzm - y_sin_v;
-        m_mat[2][1] = yzm + x_sin_v;
+        m_mat[1][2] = yzm - x_sin_v;               // 旋转项：yz(1-cosθ) - xsinθ
+        m_mat[2][0] = xzm - y_sin_v;               // 旋转项：xz(1-cosθ) - ysinθ
+        m_mat[2][1] = yzm + x_sin_v;               // 旋转项：yz(1-cosθ) + xsinθ
         m_mat[2][2] = z2 * one_minus_cos + cos_v;
     }
-} // namespace Piccolo
+}

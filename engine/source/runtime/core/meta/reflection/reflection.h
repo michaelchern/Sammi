@@ -183,78 +183,73 @@ namespace Sammi
         // 方法访问器类
         class MethodAccessor
         {
-            friend class TypeMeta;// 类型元友元
+            friend class TypeMeta;                                  // 类型元友元
 
         public:
-            MethodAccessor();// 默认构造函数
-
-            void invoke(void* instance);
-
-            const char* getMethodName() const;
-
-            MethodAccessor& operator=(const MethodAccessor& dest);
+            MethodAccessor();                                       // 默认构造函数
+            void invoke(void* instance);                            // 调用方法
+            const char* getMethodName() const;                      // 获取方法名
+            MethodAccessor& operator=(const MethodAccessor& dest);  // 赋值运算符
 
         private:
-            MethodAccessor(MethodFunctionTuple* functions);
+            MethodAccessor(MethodFunctionTuple* functions);         // 通过函数元组构造
 
         private:
-            MethodFunctionTuple* m_functions;
-            const char*          m_method_name;
+            MethodFunctionTuple* m_functions;                       // 方法函数元组指针
+            const char*          m_method_name;                     // 方法名称
         };
-        /**
-         *  Function reflection is not implemented, so use this as an std::vector accessor
-         */
+
+        // 数组访问器类（当前实现为标准向量访问器）
         class ArrayAccessor
         {
-            friend class TypeMeta;
+            friend class TypeMeta;                                            // 类型元友元
 
         public:
-            ArrayAccessor();
-            const char* getArrayTypeName();
-            const char* getElementTypeName();
-            void        set(int index, void* instance, void* element_value);
-
-            void* get(int index, void* instance);
-            int   getSize(void* instance);
-
-            ArrayAccessor& operator=(ArrayAccessor& dest);
+            ArrayAccessor();                                                  // 默认构造函数
+            const char* getArrayTypeName();                                   // 获取数组类型名
+            const char* getElementTypeName();                                 // 获取元素类型名
+            void        set(int index, void* instance, void* element_value);  // 设置数组元素
+            void*       get(int index, void* instance);                       // 获取数组元素
+            int         getSize(void* instance);                              // 获取数组大小
+            ArrayAccessor& operator=(ArrayAccessor& dest);                    // 赋值运算符
 
         private:
-            ArrayAccessor(ArrayFunctionTuple* array_func);
+            ArrayAccessor(ArrayFunctionTuple* array_func);                    // 通过函数元组构造
 
         private:
-            ArrayFunctionTuple* m_func;
-            const char*         m_array_type_name;
-            const char*         m_element_type_name;
+            ArrayFunctionTuple* m_func;                                       // 数组函数元组指针
+            const char*         m_array_type_name;                            // 数组类型名
+            const char*         m_element_type_name;                          // 元素类型名
         };
 
+        // 反射实例类（类型元+实例指针）
         class ReflectionInstance
         {
         public:
-            ReflectionInstance(TypeMeta meta, void* instance) : m_meta(meta), m_instance(instance) {}
-            ReflectionInstance() : m_meta(), m_instance(nullptr) {}
-
-            ReflectionInstance& operator=(ReflectionInstance& dest);
-
-            ReflectionInstance& operator=(ReflectionInstance&& dest);
+            ReflectionInstance(TypeMeta meta, void* instance) : m_meta(meta), m_instance(instance) {}  // 构造函数
+            ReflectionInstance() : m_meta(), m_instance(nullptr) {}                                    // 默认构造函数
+            ReflectionInstance& operator=(ReflectionInstance& dest);                                   // 赋值运算符
+            ReflectionInstance& operator=(ReflectionInstance&& dest);                                  // 移动赋值运算符
 
         public:
-            TypeMeta m_meta;
-            void*    m_instance;
+            TypeMeta m_meta;      // 类型元信息
+            void*    m_instance;  // 实例指针
         };
 
+        // 反射指针模板类（安全指针包装）
         template<typename T>
         class ReflectionPtr
         {
             template<typename U>
-            friend class ReflectionPtr;
+            friend class ReflectionPtr;  // 模板友元
 
         public:
+            // 构造函数
             ReflectionPtr(std::string type_name, T* instance) : m_type_name(type_name), m_instance(instance) {}
             ReflectionPtr() : m_type_name(), m_instance(nullptr) {}
-
             ReflectionPtr(const ReflectionPtr& dest) : m_type_name(dest.m_type_name), m_instance(dest.m_instance) {}
 
+            // 赋值运算符（类型转换）
             template<typename U /*, typename = typename std::enable_if<std::is_safely_castable<T*, U*>::value>::type */>
             ReflectionPtr<T>& operator=(const ReflectionPtr<U>& dest)
             {
@@ -267,6 +262,7 @@ namespace Sammi
                 return *this;
             }
 
+            // 移动赋值运算符（类型转换）
             template<typename U /*, typename = typename std::enable_if<std::is_safely_castable<T*, U*>::value>::type*/>
             ReflectionPtr<T>& operator=(ReflectionPtr<U>&& dest)
             {
@@ -279,6 +275,7 @@ namespace Sammi
                 return *this;
             }
 
+            // 赋值运算符（同类型）
             ReflectionPtr<T>& operator=(const ReflectionPtr<T>& dest)
             {
                 if (this == &dest)
@@ -290,6 +287,7 @@ namespace Sammi
                 return *this;
             }
 
+            // 移动赋值运算符（同类型）
             ReflectionPtr<T>& operator=(ReflectionPtr<T>&& dest)
             {
                 if (this == &dest)
@@ -301,67 +299,54 @@ namespace Sammi
                 return *this;
             }
 
+            // 类型信息
             std::string getTypeName() const { return m_type_name; }
-
             void setTypeName(std::string name) { m_type_name = name; }
 
+            // 比较运算符
             bool operator==(const T* ptr) const { return (m_instance == ptr); }
-
             bool operator!=(const T* ptr) const { return (m_instance != ptr); }
-
             bool operator==(const ReflectionPtr<T>& rhs_ptr) const { return (m_instance == rhs_ptr.m_instance); }
-
             bool operator!=(const ReflectionPtr<T>& rhs_ptr) const { return (m_instance != rhs_ptr.m_instance); }
 
-            template<
-                typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
+            // 类型转换运算符
+            template<typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
             explicit operator T1*()
             {
                 return static_cast<T1*>(m_instance);
             }
-
-            template<
-                typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
+            template<typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
             operator ReflectionPtr<T1>()
             {
                 return ReflectionPtr<T1>(m_type_name, (T1*)(m_instance));
             }
-
-            template<
-                typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
+            template<typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
             explicit operator const T1*() const
             {
                 return static_cast<T1*>(m_instance);
             }
-
-            template<
-                typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
+            template<typename T1 /*, typename = typename std::enable_if<std::is_safely_castable<T*, T1*>::value>::type*/>
             operator const ReflectionPtr<T1>() const
             {
                 return ReflectionPtr<T1>(m_type_name, (T1*)(m_instance));
             }
 
+            // 成员访问运算符
             T* operator->() { return m_instance; }
-
             T* operator->() const { return m_instance; }
-
             T& operator*() { return *(m_instance); }
-
             T* getPtr() { return m_instance; }
-
             T* getPtr() const { return m_instance; }
-
             const T& operator*() const { return *(static_cast<const T*>(m_instance)); }
-
             T*& getPtrReference() { return m_instance; }
 
+            // 布尔转换（指针有效性检查）
             operator bool() const { return (m_instance != nullptr); }
 
         private:
-            std::string m_type_name {""};
-            typedef T   m_type;
-            T*          m_instance {nullptr};
+            std::string m_type_name {""};      // 类型名称
+            typedef T   m_type;                // 类型别名
+            T*          m_instance {nullptr};  // 对象指针
         };
-
     }
 }

@@ -1,30 +1,40 @@
-#pragma once
-#include "runtime/core/meta/json.h"
-#include "runtime/core/meta/reflection/reflection.h"
+﻿#pragma once
 
-#include <cassert>
+#include "runtime/core/meta/json.h"                   // JSON序列化支持
+#include "runtime/core/meta/reflection/reflection.h"  // 反射系统支持
 
-namespace Piccolo
+#include <cassert>                                    // 断言支持
+
+namespace Sammi
 {
+    // 用于静态断言的辅助模板
     template<typename...>
     inline constexpr bool always_false = false;
 
+    // 序列化器类
     class Serializer
     {
     public:
+        // 序列化指针对象
         template<typename T>
         static Json writePointer(T* instance)
         {
-            return Json::object {{"$typeName", Json {"*"}}, {"$context", Serializer::write(*instance)}};
+            // 返回一个JSON对象，包含类型标记和实际内容
+            return Json::object
+            {
+                {"$typeName", Json {"*"}},                  // 使用"*"标记指针类型
+                {"$context", Serializer::write(*instance)}  // 递归序列化指针指向的对象
+            };
         }
 
+        // 反序列化指针对象
         template<typename T>
         static T*& readPointer(const Json& json_context, T*& instance)
         {
-            assert(instance == nullptr);
+            assert(instance == nullptr);  // 确保传入的是空指针
             std::string type_name = json_context["$typeName"].string_value();
             assert(!type_name.empty());
-            if ('*' == type_name[0])
+            if ('*' == type_name[0])  // 如果是基本类型指针
             {
                 instance = new T;
                 read(json_context["$context"], *instance);
@@ -166,4 +176,4 @@ namespace Piccolo
 
     //
     ////////////////////////////////////
-} // namespace Piccolo
+}

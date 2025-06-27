@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/math.h"
 #include "runtime/core/meta/reflection/reflection.h"
 
 #include <cassert>
 
-namespace Piccolo
+namespace Sammi
 {
     class Matrix3x3;
     class Vector3;
@@ -216,4 +216,4 @@ namespace Piccolo
 
         static const float k_epsilon;
     };
-} // namespace Piccolo
+}

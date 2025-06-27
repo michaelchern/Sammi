@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include <algorithm>
 #include <cfloat>
 #include <random>
 
-namespace Piccolo
+namespace Sammi
 {
     template<typename NumericType>
     using uniform_distribution = typename std::conditional<std::is_integral<NumericType>::value,
@@ -97,4 +97,4 @@ namespace Piccolo
     };
 
     using DefaultRNG = RandomNumberGenerator<std::mt19937>;
-} // namespace Chaos
+}

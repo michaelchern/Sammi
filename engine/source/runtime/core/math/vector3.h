@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/quaternion.h"
@@ -6,7 +6,7 @@
 
 #include <cassert>
 
-namespace Piccolo
+namespace Sammi
 {
     REFLECTION_TYPE(Vector3)
     CLASS(Vector3, Fields)
@@ -450,4 +450,4 @@ namespace Piccolo
         static const Vector3 NEGATIVE_UNIT_Z;
         static const Vector3 UNIT_SCALE;
     };
-} // namespace Piccolo
+}

@@ -2,7 +2,7 @@
 #include <cstring>
 #include <map>
 
-namespace Piccolo
+namespace Sammi
 {
     namespace Reflection
     {

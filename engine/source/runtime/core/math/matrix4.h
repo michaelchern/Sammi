@@ -55,49 +55,29 @@ namespace Sammi
         // 从反射结构体构造
         Matrix4x4(const Matrix4x4_& mat)
         {
-            m_mat[0][0] = mat.v0;
-            m_mat[0][1] = mat.v1;
-            m_mat[0][2] = mat.v2;
-            m_mat[0][3] = mat.v3;
-            m_mat[1][0] = mat.v4;
-            m_mat[1][1] = mat.v5;
-            m_mat[1][2] = mat.v6;
-            m_mat[1][3] = mat.v7;
-            m_mat[2][0] = mat.v8;
-            m_mat[2][1] = mat.v9;
-            m_mat[2][2] = mat.v10;
-            m_mat[2][3] = mat.v11;
-            m_mat[3][0] = mat.v12;
-            m_mat[3][1] = mat.v13;
-            m_mat[3][2] = mat.v14;
-            m_mat[3][3] = mat.v15;
+            // 将反射结构体的线性存储映射到4x4矩阵
+            m_mat[0][0] = mat.v0; m_mat[0][1] = mat.v1; m_mat[0][2] = mat.v2; m_mat[0][3] = mat.v3;
+            m_mat[1][0] = mat.v4; m_mat[1][1] = mat.v5; m_mat[1][2] = mat.v6; m_mat[1][3] = mat.v7;
+            m_mat[2][0] = mat.v8; m_mat[2][1] = mat.v9; m_mat[2][2] = mat.v10; m_mat[2][3] = mat.v11;
+            m_mat[3][0] = mat.v12; m_mat[3][1] = mat.v13; m_mat[3][2] = mat.v14; m_mat[3][3] = mat.v15;
         }
 
+        // 转换为反射结构体
         Matrix4x4_ toMatrix4x4_()
         {
             Matrix4x4_ res;
-
-            res.v0  = m_mat[0][0];
-            res.v1  = m_mat[0][1];
-            res.v2  = m_mat[0][2];
-            res.v3  = m_mat[0][3];
-            res.v4  = m_mat[1][0];
-            res.v5  = m_mat[1][1];
-            res.v6  = m_mat[1][2];
-            res.v7  = m_mat[1][3];
-            res.v8  = m_mat[2][0];
-            res.v9  = m_mat[2][1];
-            res.v10 = m_mat[2][2];
-            res.v11 = m_mat[2][3];
-            res.v12 = m_mat[3][0];
-            res.v13 = m_mat[3][1];
-            res.v14 = m_mat[3][2];
-            res.v15 = m_mat[3][3];
+            // 将4x4矩阵映射到线性存储结构
+            res.v0  = m_mat[0][0]; res.v1  = m_mat[0][1]; res.v2  = m_mat[0][2]; res.v3  = m_mat[0][3];
+            res.v4  = m_mat[1][0]; res.v5  = m_mat[1][1]; res.v6  = m_mat[1][2]; res.v7  = m_mat[1][3];
+            res.v8  = m_mat[2][0]; res.v9  = m_mat[2][1]; res.v10 = m_mat[2][2]; res.v11 = m_mat[2][3];
+            res.v12 = m_mat[3][0]; res.v13 = m_mat[3][1]; res.v14 = m_mat[3][2]; res.v15 = m_mat[3][3];
             return res;
         }
 
+        // 默认构造函数（初始化为单位矩阵）
         Matrix4x4() { operator=(IDENTITY); }
 
+        // 通过16元素数组构造
         Matrix4x4(const float (&float_array)[16])
         {
             m_mat[0][0] = float_array[0];
@@ -118,66 +98,36 @@ namespace Sammi
             m_mat[3][3] = float_array[15];
         }
 
-        Matrix4x4(float m00,
-                  float m01,
-                  float m02,
-                  float m03,
-                  float m10,
-                  float m11,
-                  float m12,
-                  float m13,
-                  float m20,
-                  float m21,
-                  float m22,
-                  float m23,
-                  float m30,
-                  float m31,
-                  float m32,
-                  float m33)
+        // 通过16个独立元素构造
+        Matrix4x4(float m00, float m01, float m02, float m03,
+                  float m10, float m11, float m12, float m13,
+                  float m20, float m21, float m22, float m23,
+                  float m30, float m31, float m32, float m33)
         {
-            m_mat[0][0] = m00;
-            m_mat[0][1] = m01;
-            m_mat[0][2] = m02;
-            m_mat[0][3] = m03;
-            m_mat[1][0] = m10;
-            m_mat[1][1] = m11;
-            m_mat[1][2] = m12;
-            m_mat[1][3] = m13;
-            m_mat[2][0] = m20;
-            m_mat[2][1] = m21;
-            m_mat[2][2] = m22;
-            m_mat[2][3] = m23;
-            m_mat[3][0] = m30;
-            m_mat[3][1] = m31;
-            m_mat[3][2] = m32;
-            m_mat[3][3] = m33;
+            // 按行填充矩阵元素
+            m_mat[0][0] = m00; m_mat[0][1] = m01; m_mat[0][2] = m02; m_mat[0][3] = m03;
+            m_mat[1][0] = m10; m_mat[1][1] = m11; m_mat[1][2] = m12; m_mat[1][3] = m13;
+            m_mat[2][0] = m20; m_mat[2][1] = m21; m_mat[2][2] = m22; m_mat[2][3] = m23;
+            m_mat[3][0] = m30; m_mat[3][1] = m31; m_mat[3][2] = m32; m_mat[3][3] = m33;
         }
 
+        // 通过四个行向量构造
         Matrix4x4(const Vector4& row0, const Vector4& row1, const Vector4& row2, const Vector4& row3)
         {
-            m_mat[0][0] = row0.x;
-            m_mat[0][1] = row0.y;
-            m_mat[0][2] = row0.z;
-            m_mat[0][3] = row0.w;
-            m_mat[1][0] = row1.x;
-            m_mat[1][1] = row1.y;
-            m_mat[1][2] = row1.z;
-            m_mat[1][3] = row1.w;
-            m_mat[2][0] = row2.x;
-            m_mat[2][1] = row2.y;
-            m_mat[2][2] = row2.z;
-            m_mat[2][3] = row2.w;
-            m_mat[3][0] = row3.x;
-            m_mat[3][1] = row3.y;
-            m_mat[3][2] = row3.z;
-            m_mat[3][3] = row3.w;
+            // 每行对应一个向量
+            m_mat[0][0] = row0.x; m_mat[0][1] = row0.y; m_mat[0][2] = row0.z; m_mat[0][3] = row0.w;
+            m_mat[1][0] = row1.x; m_mat[1][1] = row1.y; m_mat[1][2] = row1.z; m_mat[1][3] = row1.w;
+            m_mat[2][0] = row2.x; m_mat[2][1] = row2.y; m_mat[2][2] = row2.z; m_mat[2][3] = row2.w;
+            m_mat[3][0] = row3.x; m_mat[3][1] = row3.y; m_mat[3][2] = row3.z; m_mat[3][3] = row3.w;
         }
 
+        // 通过位置、缩放和旋转构造变换矩阵
         Matrix4x4(const Vector3& position, const Vector3& scale, const Quaternion& rotation)
         {
             makeTransform(position, scale, rotation);
         }
 
+        // 数据导入导出
         void fromData(const float (&float_array)[16])
         {
             m_mat[0][0] = float_array[0];
@@ -218,27 +168,15 @@ namespace Sammi
             float_array[15] = m_mat[3][3];
         }
 
-        /** Creates a standard 4x4 transformation matrix with a zero translation part from a rotation/scaling 3x3
-         * matrix.
-         */
+        // 从3x3矩阵设置旋转部分（平移部分清零）
         void setMatrix3x3(const Matrix3x3& mat3)
         {
-            m_mat[0][0] = mat3.m_mat[0][0];
-            m_mat[0][1] = mat3.m_mat[0][1];
-            m_mat[0][2] = mat3.m_mat[0][2];
-            m_mat[0][3] = 0;
-            m_mat[1][0] = mat3.m_mat[1][0];
-            m_mat[1][1] = mat3.m_mat[1][1];
-            m_mat[1][2] = mat3.m_mat[1][2];
-            m_mat[1][3] = 0;
-            m_mat[2][0] = mat3.m_mat[2][0];
-            m_mat[2][1] = mat3.m_mat[2][1];
-            m_mat[2][2] = mat3.m_mat[2][2];
-            m_mat[2][3] = 0;
-            m_mat[3][0] = 0;
-            m_mat[3][1] = 0;
-            m_mat[3][2] = 0;
-            m_mat[3][3] = 1;
+            // 前三行前三列来自3x3矩阵
+            m_mat[0][0] = mat3.m_mat[0][0]; m_mat[0][1] = mat3.m_mat[0][1]; m_mat[0][2] = mat3.m_mat[0][2]; m_mat[0][3] = 0;
+            m_mat[1][0] = mat3.m_mat[1][0]; m_mat[1][1] = mat3.m_mat[1][1]; m_mat[1][2] = mat3.m_mat[1][2]; m_mat[1][3] = 0;
+            m_mat[2][0] = mat3.m_mat[2][0]; m_mat[2][1] = mat3.m_mat[2][1]; m_mat[2][2] = mat3.m_mat[2][2]; m_mat[2][3] = 0;
+            // 最后一行保持单位矩阵形式
+            m_mat[3][0] = 0;                m_mat[3][1] = 0;                m_mat[3][2] = 0;                m_mat[3][3] = 1;
         }
 
         /** Creates a standard 4x4 transformation matrix with a zero translation part from a rotation/scaling
@@ -950,4 +888,4 @@ namespace Sammi
     };
 
     Vector4 operator*(const Vector4& v, const Matrix4x4& mat);
-} // namespace Piccolo
+}

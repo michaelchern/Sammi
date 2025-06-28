@@ -45,81 +45,108 @@ namespace Sammi
     // 构造函数：初始化UI创建器映射
     EditorUI::EditorUI()
     {
-        const auto& asset_folder            = g_runtime_global_context.m_config_manager->getAssetFolder();
-        m_editor_ui_creator["TreeNodePush"] = [this](const std::string& name, void* value_ptr) -> void {
-            static ImGuiTableFlags flags      = ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
-            bool                   node_state = false;
-            g_node_depth++;
-            if (g_node_depth > 0)
+        const auto& asset_folder = g_runtime_global_context.m_config_manager->getAssetFolder();
+
+        // 定义树节点压栈的UI行为
+        m_editor_ui_creator["TreeNodePush"] = [this](const std::string& name, void* value_ptr) -> void
             {
-                if (g_editor_node_state_array[g_node_depth - 1].second)
+                static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings;
+                bool node_state = false;
+                // 更新节点深度
+                g_node_depth++;
+
+                // 根据父节点状态决定是否展开
+                if (g_node_depth > 0)
                 {
-                    node_state = ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
+                    if (g_editor_node_state_array[g_node_depth - 1].second)
+                    {
+                        node_state = ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
+                    }
+                    else
+                    {
+                        g_editor_node_state_array.emplace_back(std::pair(name.c_str(), node_state));
+                        return;
+                    }
                 }
                 else
                 {
-                    g_editor_node_state_array.emplace_back(std::pair(name.c_str(), node_state));
-                    return;
+                    node_state = ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
                 }
-            }
-            else
+
+                // 保存节点状态
+                g_editor_node_state_array.emplace_back(std::pair(name.c_str(), node_state));
+            };
+
+        // 定义树节点出栈的UI行为
+        m_editor_ui_creator["TreeNodePop"] = [this](const std::string& name, void* value_ptr) -> void
             {
-                node_state = ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
-            }
-            g_editor_node_state_array.emplace_back(std::pair(name.c_str(), node_state));
-        };
-        m_editor_ui_creator["TreeNodePop"] = [this](const std::string& name, void* value_ptr) -> void {
-            if (g_editor_node_state_array[g_node_depth].second)
+                // 如果节点是展开的，则关闭树节点
+                if (g_editor_node_state_array[g_node_depth].second)
+                {
+                    ImGui::TreePop();
+                }
+
+                // 恢复节点状态
+                g_editor_node_state_array.pop_back();
+                g_node_depth--;
+            };
+
+        // 定义变换组件的UI行为
+        m_editor_ui_creator["Transform"] = [this](const std::string& name, void* value_ptr) -> void
             {
-                ImGui::TreePop();
-            }
-            g_editor_node_state_array.pop_back();
-            g_node_depth--;
-        };
-        m_editor_ui_creator["Transform"] = [this](const std::string& name, void* value_ptr) -> void {
-            if (g_editor_node_state_array[g_node_depth].second)
-            {
-                Transform* trans_ptr = static_cast<Transform*>(value_ptr);
+                // 只有当前节点展开时才渲染
+                if (g_editor_node_state_array[g_node_depth].second)
+                {
+                    Transform* trans_ptr = static_cast<Transform*>(value_ptr);
 
-                Vector3 degrees_val;
+                    // 将四元数转换为欧拉角显示
+                    Vector3 degrees_val;
 
-                degrees_val.x = trans_ptr->m_rotation.getPitch(false).valueDegrees();
-                degrees_val.y = trans_ptr->m_rotation.getRoll(false).valueDegrees();
-                degrees_val.z = trans_ptr->m_rotation.getYaw(false).valueDegrees();
+                    degrees_val.x = trans_ptr->m_rotation.getPitch(false).valueDegrees();
+                    degrees_val.y = trans_ptr->m_rotation.getRoll(false).valueDegrees();
+                    degrees_val.z = trans_ptr->m_rotation.getYaw(false).valueDegrees();
 
-                DrawVecControl("Position", trans_ptr->m_position);
-                DrawVecControl("Rotation", degrees_val);
-                DrawVecControl("Scale", trans_ptr->m_scale);
+                    // 绘制位置、旋转、缩放的矢量控件
+                    DrawVecControl("Position", trans_ptr->m_position);
+                    DrawVecControl("Rotation", degrees_val);
+                    DrawVecControl("Scale", trans_ptr->m_scale);
 
-                trans_ptr->m_rotation.w = Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
+                    // 将欧拉角转换回四元数
+                    trans_ptr->m_rotation.w = Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.z / 2)) +
-                                          Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
+                                              Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.z / 2));
-                trans_ptr->m_rotation.x = Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
+
+                    trans_ptr->m_rotation.x = Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.z / 2)) -
-                                          Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
+                                              Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.z / 2));
-                trans_ptr->m_rotation.y = Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
+
+                    trans_ptr->m_rotation.y = Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.z / 2)) +
-                                          Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
+                                              Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.z / 2));
-                trans_ptr->m_rotation.z = Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
+
+                    trans_ptr->m_rotation.z = Math::cos(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.z / 2)) -
-                                          Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
+                                              Math::sin(Math::degreesToRadians(degrees_val.x / 2)) *
                                               Math::sin(Math::degreesToRadians(degrees_val.y / 2)) *
                                               Math::cos(Math::degreesToRadians(degrees_val.z / 2));
-                trans_ptr->m_rotation.normalise();
 
-                g_editor_global_context.m_scene_manager->drawSelectedEntityAxis();
-            }
-        };
+                    // 标记变换组件为"脏"，需要更新
+                    trans_ptr->m_rotation.normalise();
+                    g_editor_global_context.m_scene_manager->drawSelectedEntityAxis();
+                }
+            };
+
+        // 定义布尔类型的UI行为
         m_editor_ui_creator["bool"] = [this](const std::string& name, void* value_ptr)  -> void {
             if(g_node_depth == -1)
             {

@@ -22,14 +22,14 @@ int main(int argc, char** argv)
     std::filesystem::path config_file_path = executable_path.parent_path() / "SammiEditor.ini";
 
     // 创建引擎实例
-    Piccolo::PiccoloEngine* engine = new Piccolo::PiccoloEngine();
+    Sammi::SammiEngine* engine = new Sammi::SammiEngine();
 
     // 启动引擎并初始化（传入配置文件路径）
     engine->startEngine(config_file_path.generic_string());
     engine->initialize();
 
     // 创建编辑器实例
-    Piccolo::PiccoloEditor* editor = new Piccolo::PiccoloEditor();
+    Sammi::SammiEditor* editor = new Sammi::SammiEditor();
     // 使用引擎初始化编辑器
     editor->initialize(engine);
 

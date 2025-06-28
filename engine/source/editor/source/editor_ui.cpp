@@ -1,47 +1,48 @@
-#include "editor/include/editor_ui.h"
+﻿#include "editor/include/editor_ui.h"
 
-#include "editor/include/editor_global_context.h"
-#include "editor/include/editor_input_manager.h"
-#include "editor/include/editor_scene_manager.h"
+// 包含编辑器相关头文件
+#include "editor/include/editor_global_context.h"  // 全局上下文
+#include "editor/include/editor_input_manager.h"   // 输入管理
+#include "editor/include/editor_scene_manager.h"   // 场景管理
 
-#include "runtime/core/base/macro.h"
-#include "runtime/core/meta/reflection/reflection.h"
+// 包含引擎核心功能
+#include "runtime/core/base/macro.h"                  // 宏定义
+#include "runtime/core/meta/reflection/reflection.h"  // 反射系统
 
-#include "runtime/platform/path/path.h"
+// 包含路径和资源管理
+#include "runtime/platform/path/path.h"                      // 路径处理
+#include "runtime/resource/asset_manager/asset_manager.h"    // 资源管理
+#include "runtime/resource/config_manager/config_manager.h"  // 配置管理
 
-#include "runtime/resource/asset_manager/asset_manager.h"
-#include "runtime/resource/config_manager/config_manager.h"
+// 包含渲染和输入系统
+#include "runtime/engine.h"                                                      // 引擎核心
+#include "runtime/function/framework/component/mesh/mesh_component.h"            // 网格组件
+#include "runtime/function/framework/component/transform/transform_component.h"  // 变换组件
+#include "runtime/function/framework/level/level.h"                              // 关卡管理
+#include "runtime/function/framework/world/world_manager.h"                      // 世界管理
+#include "runtime/function/global/global_context.h"                              // 全局上下文
+#include "runtime/function/input/input_system.h"                                 // 输入系统
+#include "runtime/function/render/render_camera.h"                               // 渲染相机
+#include "runtime/function/render/render_system.h"                               // 渲染系统
+#include "runtime/function/render/window_system.h"                               // 窗口系统
+#include "runtime/function/render/render_debug_config.h"                         // 调试配置
 
-#include "runtime/engine.h"
-
-#include "runtime/function/framework/component/mesh/mesh_component.h"
-#include "runtime/function/framework/component/transform/transform_component.h"
-#include "runtime/function/framework/level/level.h"
-#include "runtime/function/framework/world/world_manager.h"
-#include "runtime/function/global/global_context.h"
-#include "runtime/function/input/input_system.h"
-#include "runtime/function/render/render_camera.h"
-#include "runtime/function/render/render_system.h"
-#include "runtime/function/render/window_system.h"
-#include "runtime/function/render/render_debug_config.h"
-
+// 包含ImGui库
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <stb_image.h>
+#include <stb_image.h>  // 图像加载库
 
-namespace Piccolo
+namespace Sammi
 {
+    // 全局状态：记录UI节点的展开状态
     std::vector<std::pair<std::string, bool>> g_editor_node_state_array;
-    int                                       g_node_depth = -1;
-    void                                      DrawVecControl(const std::string& label,
-                                                             Piccolo::Vector3&    values,
-                                                             float              resetValue  = 0.0f,
-                                                             float              columnWidth = 100.0f);
-    void                                      DrawVecControl(const std::string& label,
-                                                             Piccolo::Quaternion& values,
-                                                             float              resetValue  = 0.0f,
-                                                             float              columnWidth = 100.0f);
+    int g_node_depth = -1;
 
+    // 前向声明辅助函数
+    void DrawVecControl(const std::string& label, Sammi::Vector3& values, float resetValue = 0.0f, float columnWidth = 100.0f);
+    void DrawVecControl(const std::string& label, Sammi::Quaternion& values, float resetValue = 0.0f, float columnWidth = 100.0f);
+
+    // 构造函数：初始化UI创建器映射
     EditorUI::EditorUI()
     {
         const auto& asset_folder            = g_runtime_global_context.m_config_manager->getAssetFolder();
@@ -1100,4 +1101,4 @@ namespace Piccolo
         ImGui::Columns(1);
         ImGui::PopID();
     }
-} // namespace Piccolo
+}

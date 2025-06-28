@@ -1,6 +1,6 @@
-#include "editor/include/axis.h"
+﻿#include "editor/include/axis.h"
 
-namespace Piccolo
+namespace Sammi
 {
     EditorTranslationAxis::EditorTranslationAxis()
     {

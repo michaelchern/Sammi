@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "editor/include/axis.h"
 
@@ -13,9 +13,9 @@
 #include <map>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
-    class PiccoloEditor;
+    class SammiEditor;
     class WindowSystem;
     class RenderSystem;
 
@@ -59,4 +59,4 @@ namespace Piccolo
         bool m_scene_lights_window_open      = true;
         bool m_scene_lights_data_window_open = true;
     };
-} // namespace Piccolo
+}

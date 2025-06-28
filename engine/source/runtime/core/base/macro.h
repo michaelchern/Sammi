@@ -34,13 +34,13 @@
 
 // 线程休眠宏（单位：毫秒）
 // 示例: PolitSleep(100) 休眠100ms
-#define PolitSleep(_ms) std::this_thread::sleep_for(std::chrono::milliseconds(_ms));
+#define SammiSleep(_ms) std::this_thread::sleep_for(std::chrono::milliseconds(_ms));
 
 // 变量名转字符串宏
 // 示例: 
 //   int myVar;
 //   std::cout << PolitNameOf(myVar);  // 输出 "myVar"
-#define PolitNameOf(name) #name
+#define SammiNameOf(name) #name
 
 /////////////////////////////
 // 断言调试系统

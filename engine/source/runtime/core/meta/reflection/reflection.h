@@ -175,9 +175,9 @@ namespace Sammi
             FieldAccessor(FieldFunctionTuple* functions);         // 通过函数元组构造
 
         private:
-            FieldFunctionTuple* m_functions;// 字段函数元组指针
-            const char*         m_field_name;// 字段名称
-            const char*         m_field_type_name;// 字段类型名
+            FieldFunctionTuple* m_functions;                      // 字段函数元组指针
+            const char*         m_field_name;                     // 字段名称
+            const char*         m_field_type_name;                // 字段类型名
         };
 
         // 方法访问器类

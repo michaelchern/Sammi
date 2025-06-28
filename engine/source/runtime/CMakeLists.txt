@@ -49,14 +49,14 @@ target_compile_options(${TARGET_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:
 target_compile_options(${TARGET_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/WX->")
 
 # 链接依赖库
-target_link_libraries(${TARGET_NAME} PUBLIC spdlog::spdlog)              # 日志系统
-target_link_libraries(${TARGET_NAME} PRIVATE tinyobjloader stb)          # OBJ加载器和图像处理库
-target_link_libraries(${TARGET_NAME} PUBLIC glfw)                        # 跨平台窗口库
-target_link_libraries(${TARGET_NAME} PUBLIC imgui)                       # 即时GUI渲染
-target_link_libraries(${TARGET_NAME} PUBLIC Jolt)                        # 物理引擎
-target_link_libraries(${TARGET_NAME} PUBLIC lua_static sol2)             # Lua脚本支持
-target_link_libraries(${TARGET_NAME} PUBLIC ${vulkan_lib})               # Vulkan图形API
-target_link_libraries(${TARGET_NAME} PRIVATE $<BUILD_INTERFACE:json11>)  # 内部JSON库
+#target_link_libraries(${TARGET_NAME} PUBLIC spdlog::spdlog)              # 日志系统
+#target_link_libraries(${TARGET_NAME} PRIVATE tinyobjloader stb)          # OBJ加载器和图像处理库
+#target_link_libraries(${TARGET_NAME} PUBLIC glfw)                        # 跨平台窗口库
+#target_link_libraries(${TARGET_NAME} PUBLIC imgui)                       # 即时GUI渲染
+#target_link_libraries(${TARGET_NAME} PUBLIC Jolt)                        # 物理引擎
+#target_link_libraries(${TARGET_NAME} PUBLIC lua_static sol2)             # Lua脚本支持
+#target_link_libraries(${TARGET_NAME} PUBLIC ${vulkan_lib})               # Vulkan图形API
+#target_link_libraries(${TARGET_NAME} PRIVATE $<BUILD_INTERFACE:json11>)  # 内部JSON库
 
 # 物理调试渲染器的可选支持
 if(ENABLE_PHYSICS_DEBUG_RENDERER)
@@ -72,7 +72,7 @@ target_include_directories(
   PUBLIC $<BUILD_INTERFACE:${vulkan_include}>)
 
 # 着色器编译依赖管理
-add_dependencies(${TARGET_NAME} ${SHADER_COMPILE_TARGET})
+#add_dependencies(${TARGET_NAME} ${SHADER_COMPILE_TARGET})
 # 着色器生成的CPP头文件路径
 target_include_directories(
   ${TARGET_NAME}

@@ -71,11 +71,11 @@ else()
 endif()
 
 # 添加着色器编译目标并进入shader子目录
-set(SHADER_COMPILE_TARGET PiccoloShaderCompile)
-add_subdirectory(shader)
+#set(SHADER_COMPILE_TARGET PiccoloShaderCompile)
+#add_subdirectory(shader)
 
 # 添加第三方库子目录
-add_subdirectory(3rdparty)
+#add_subdirectory(3rdparty)
 
 # 添加运行时模块子目录
 add_subdirectory(source/runtime)
@@ -91,8 +91,8 @@ set(CODEGEN_TARGET "SammiPreCompile")
 include(source/precompile/precompile.cmake)
 
 # 在IDE中将目标归类到"Engine"文件夹
-set_target_properties("${CODEGEN_TARGET}" PROPERTIES FOLDER "Engine" )
+#set_target_properties("${CODEGEN_TARGET}" PROPERTIES FOLDER "Engine" )
 
 # 设置预编译目标依赖关系
-add_dependencies(SammiRuntime "${CODEGEN_TARGET}")
-add_dependencies("${CODEGEN_TARGET}" "SammiParser")
+#add_dependencies(SammiRuntime "${CODEGEN_TARGET}")
+#add_dependencies("${CODEGEN_TARGET}" "SammiParser")

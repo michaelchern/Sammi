@@ -1,54 +1,54 @@
-#include "common/precompiled.h" // °üº¬ÏîÄ¿Ô¤±àÒëÍ·
-#include "cursor.h"   // ĞèÒªCursorÀàµÄÉùÃ÷£¨ÓÃÓÚGetDeclaration·µ»ØÖµ£©
-#include "cursor_type.h"  // µ±Ç°ÀàµÄÉùÃ÷
+ï»¿#include "common/precompiled.h" // åŒ…å«é¡¹ç›®é¢„ç¼–è¯‘å¤´
+#include "cursor.h"             // éœ€è¦Cursorç±»çš„å£°æ˜ï¼ˆç”¨äºGetDeclarationè¿”å›å€¼ï¼‰
+#include "cursor_type.h"        // å½“å‰ç±»çš„å£°æ˜
 
-// ¹¹Ôìº¯Êı£º±£´æÔ­Ê¼ÀàĞÍ¾ä±ú
+// æ„é€ å‡½æ•°ï¼šä¿å­˜åŸå§‹ç±»å‹å¥æŸ„
 CursorType::CursorType(const CXType& handle) : m_handle(handle) {}
 
-// »ñÈ¡ÀàĞÍµÄ¿É¶ÁÃû³Æ£¨Èç"const std::map<int, bool>&"£©
+// è·å–ç±»å‹çš„å¯è¯»åç§°ï¼ˆå¦‚"const std::map<int, bool>&"ï¼‰
 std::string CursorType::GetDisplayName(void) const
 {
     std::string display_name;
-    // µ÷ÓÃlibclang»ñÈ¡ÀàĞÍÆ´Ğ´£¬Í¨¹ı¹¤¾ßº¯Êı×ª»»Îªstd::string
+    // è°ƒç”¨libclangè·å–ç±»å‹æ‹¼å†™ï¼Œé€šè¿‡å·¥å…·å‡½æ•°è½¬æ¢ä¸ºstd::string
     Utils::toString(clang_getTypeSpelling(m_handle), display_name);
     return display_name;
 }
 
-// »ñÈ¡º¯ÊıÀàĞÍ»òÄ£°åÀàĞÍµÄ²ÎÊıÊıÁ¿
-// ¶ÔÓÚ·Çº¯Êı/Ä£°åÀàĞÍ·µ»Ø0
+// è·å–å‡½æ•°ç±»å‹æˆ–æ¨¡æ¿ç±»å‹çš„å‚æ•°æ•°é‡
+// å¯¹äºéå‡½æ•°/æ¨¡æ¿ç±»å‹è¿”å›0
 int CursorType::GetArgumentCount(void) const
 {
     return clang_getNumArgTypes(m_handle);
 }
 
-// »ñÈ¡Ö¸¶¨Ë÷ÒıµÄ²ÎÊıÀàĞÍ£¨Ë÷Òı´Ó0¿ªÊ¼£©
+// è·å–æŒ‡å®šç´¢å¼•çš„å‚æ•°ç±»å‹ï¼ˆç´¢å¼•ä»0å¼€å§‹ï¼‰
 CursorType CursorType::GetArgument(unsigned index) const
 {
-    return clang_getArgType(m_handle, index);  // ·µ»Ø·â×°µÄ²ÎÊıÀàĞÍ
+    return clang_getArgType(m_handle, index);  // è¿”å›å°è£…çš„å‚æ•°ç±»å‹
 }
 
-// »ñÈ¡¹æ·¶ÀàĞÍ£¨È¥³ıtypedef/aliasĞŞÊÎµÄµ×²ãÀàĞÍ£©
+// è·å–è§„èŒƒç±»å‹ï¼ˆå»é™¤typedef/aliasä¿®é¥°çš„åº•å±‚ç±»å‹ï¼‰
 CursorType CursorType::GetCanonicalType(void) const
 {
     return clang_getCanonicalType(m_handle);
 }
 
-// »ñÈ¡ÉùÃ÷¸ÃÀàĞÍµÄAST½Úµã£¨ÈçÀà/º¯ÊıÉùÃ÷£©
+// è·å–å£°æ˜è¯¥ç±»å‹çš„ASTèŠ‚ç‚¹ï¼ˆå¦‚ç±»/å‡½æ•°å£°æ˜ï¼‰
 Cursor CursorType::GetDeclaration(void) const
 {
-    // ×¢Òâ£º»ù´¡ÀàĞÍ£¨Èçint£©ÎŞÉùÃ÷£¬·µ»ØÎŞĞ§Cursor
+    // æ³¨æ„ï¼šåŸºç¡€ç±»å‹ï¼ˆå¦‚intï¼‰æ— å£°æ˜ï¼Œè¿”å›æ— æ•ˆCursor
     return clang_getTypeDeclaration(m_handle);
 }
 
-// »ñÈ¡ÀàĞÍµÄ»ù±¾·ÖÀà£¨ÈçÖ¸Õë¡¢Êı×é¡¢½á¹¹ÌåµÈ£©
+// è·å–ç±»å‹çš„åŸºæœ¬åˆ†ç±»ï¼ˆå¦‚æŒ‡é’ˆã€æ•°ç»„ã€ç»“æ„ä½“ç­‰ï¼‰
 CXTypeKind CursorType::GetKind(void) const
 {
-    return m_handle.kind;  // Ö±½Ó·µ»Øµ×²ã½á¹¹µÄkind×Ö¶Î
+    return m_handle.kind;  // ç›´æ¥è¿”å›åº•å±‚ç»“æ„çš„kindå­—æ®µ
 }
 
-// ¼ì²éÀàĞÍÊÇ·ñÓĞconstÏŞ¶¨·û
+// æ£€æŸ¥ç±»å‹æ˜¯å¦æœ‰consté™å®šç¬¦
 bool CursorType::IsConst(void) const
 {
-    // Ê¹ÓÃlibclangµÄÏŞ¶¨·û¼ì²éº¯Êı
+    // ä½¿ç”¨libclangçš„é™å®šç¬¦æ£€æŸ¥å‡½æ•°
     return clang_isConstQualifiedType(m_handle) ? true : false;
 }

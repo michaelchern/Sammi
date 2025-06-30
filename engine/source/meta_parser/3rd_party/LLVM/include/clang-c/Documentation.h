@@ -1,4 +1,4 @@
-/*==-- clang-c/Documentation.h - Utilities for comment processing -*- C -*-===*\
+﻿/*==-- clang-c/Documentation.h - Utilities for comment processing -*- C -*-===*\
 |*                                                                            *|
 |*                     The LLVM Compiler Infrastructure                       *|
 |*                                                                            *|

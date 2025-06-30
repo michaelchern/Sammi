@@ -1,4 +1,4 @@
-/*===-- clang-c/CXErrorCode.h - C Index Error Codes  --------------*- C -*-===*\
+﻿/*===-- clang-c/CXErrorCode.h - C Index Error Codes  --------------*- C -*-===*\
 |*                                                                            *|
 |*                     The LLVM Compiler Infrastructure                       *|
 |*                                                                            *|

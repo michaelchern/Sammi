@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Boost Software License - Version 1.0
  *
  * Mustache v4.1

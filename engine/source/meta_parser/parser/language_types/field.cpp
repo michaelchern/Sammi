@@ -1,43 +1,43 @@
-#include "common/precompiled.h"  // Ô¤±àÒëÍ·ÎÄ¼ş
-#include "class.h"               // Àà¶¨ÒåÍ·ÎÄ¼ş
-#include "field.h"               // ×Ö¶Î¶¨ÒåÍ·ÎÄ¼ş
+ï»¿#include "common/precompiled.h"  // é¢„ç¼–è¯‘å¤´æ–‡ä»¶
+#include "class.h"               // ç±»å®šä¹‰å¤´æ–‡ä»¶
+#include "field.h"               // å­—æ®µå®šä¹‰å¤´æ–‡ä»¶
 
-// ×Ö¶Î¹¹Ôìº¯Êı£º´ÓAST½Úµã½âÎö×Ö¶ÎĞÅÏ¢
+// å­—æ®µæ„é€ å‡½æ•°ï¼šä»ASTèŠ‚ç‚¹è§£æå­—æ®µä¿¡æ¯
 Field::Field(const Cursor& cursor, const Namespace& current_namespace, Class* parent)
-    : TypeInfo(cursor, current_namespace),                          // ³õÊ¼»¯»ùÀà
-      m_is_const(cursor.getType().IsConst()),                       // ¼ì²âconstĞŞÊÎ·û
-      m_parent(parent),                                             // Ö¸ÏòËùÊô¸¸Àà
-      m_name(cursor.getSpelling()),                                 // Ô­Ê¼×Ö¶ÎÃû
-      m_display_name(Utils::getNameWithoutFirstM(m_name)),          // ÏÔÊ¾Ãû£¨ÒÆ³ıÇ°×º£©
-      m_type(Utils::getTypeNameWithoutNamespace(cursor.getType()))  // Ô­Ê¼ÀàĞÍÃû
+    : TypeInfo(cursor, current_namespace),                          // åˆå§‹åŒ–åŸºç±»
+      m_is_const(cursor.getType().IsConst()),                       // æ£€æµ‹constä¿®é¥°ç¬¦
+      m_parent(parent),                                             // æŒ‡å‘æ‰€å±çˆ¶ç±»
+      m_name(cursor.getSpelling()),                                 // åŸå§‹å­—æ®µå
+      m_display_name(Utils::getNameWithoutFirstM(m_name)),          // æ˜¾ç¤ºåï¼ˆç§»é™¤å‰ç¼€ï¼‰
+      m_type(Utils::getTypeNameWithoutNamespace(cursor.getType()))  // åŸå§‹ç±»å‹å
 {
-    // ÇåÀíÀàĞÍÃû×Ö·û´®
-    Utils::replaceAll(m_type, " ", "");        // ÒÆ³ıËùÓĞ¿Õ¸ñ
-    Utils::replaceAll(m_type, "Sammi::", "");  // ÒÆ³ıÒıÇæÃüÃû¿Õ¼äÇ°×º
+    // æ¸…ç†ç±»å‹åå­—ç¬¦ä¸²
+    Utils::replaceAll(m_type, " ", "");        // ç§»é™¤æ‰€æœ‰ç©ºæ ¼
+    Utils::replaceAll(m_type, "Sammi::", "");  // ç§»é™¤å¼•æ“å‘½åç©ºé—´å‰ç¼€
 
-    // »ñÈ¡ÔªÊı¾İÖĞµÄÄ¬ÈÏÖµ£¨ÈôÓĞ£©
+    // è·å–å…ƒæ•°æ®ä¸­çš„é»˜è®¤å€¼ï¼ˆè‹¥æœ‰ï¼‰
     auto ret_string = Utils::getStringWithoutQuot(m_meta_data.getProperty("default"));
-    m_default       = ret_string;  // ´æ´¢´¦ÀíºóµÄÄ¬ÈÏÖµ
+    m_default       = ret_string;  // å­˜å‚¨å¤„ç†åçš„é»˜è®¤å€¼
 }
 
-// ÅĞ¶ÏÊÇ·ñÓ¦²ÎÓë´úÂëÉú³É
+// åˆ¤æ–­æ˜¯å¦åº”å‚ä¸ä»£ç ç”Ÿæˆ
 bool Field::shouldCompile(void) const
 {
-    return isAccessible();  // Ö±½ÓÎ¯ÍĞ¸ø¿É·ÃÎÊĞÔ¼ì²é
+    return isAccessible();  // ç›´æ¥å§”æ‰˜ç»™å¯è®¿é—®æ€§æ£€æŸ¥
 }
 
-// ÅĞ¶Ï×Ö¶ÎÊÇ·ñ¿É·ÃÎÊ/ÊÇ·ñĞèÒªÉú³É
+// åˆ¤æ–­å­—æ®µæ˜¯å¦å¯è®¿é—®/æ˜¯å¦éœ€è¦ç”Ÿæˆ
 bool Field::isAccessible(void) const
 {
-    // Âß¼­·Ö½â£º
-    // Çé¿ö1£º¸¸ÀàÆôÓÃ×Ö¶ÎÉú³É && ×Ö¶ÎÎ´±»½ûÓÃ
-    bool case1 = (m_parent->m_meta_data.getFlag(NativeProperty::Fields) ||  // ¸¸Àà±ê¼ÇÉú³ÉËùÓĞ×Ö¶Î
-                  m_parent->m_meta_data.getFlag(NativeProperty::All)) &&    // »ò¸¸Àà±ê¼ÇÉú³ÉËùÓĞÄÚÈİ
-                 !m_meta_data.getFlag(NativeProperty::Disable);             // ÇÒ×Ö¶ÎÎ´±ê¼Ç½ûÓÃ
+    // é€»è¾‘åˆ†è§£ï¼š
+    // æƒ…å†µ1ï¼šçˆ¶ç±»å¯ç”¨å­—æ®µç”Ÿæˆ && å­—æ®µæœªè¢«ç¦ç”¨
+    bool case1 = (m_parent->m_meta_data.getFlag(NativeProperty::Fields) ||  // çˆ¶ç±»æ ‡è®°ç”Ÿæˆæ‰€æœ‰å­—æ®µ
+                  m_parent->m_meta_data.getFlag(NativeProperty::All)) &&    // æˆ–çˆ¶ç±»æ ‡è®°ç”Ÿæˆæ‰€æœ‰å†…å®¹
+                 !m_meta_data.getFlag(NativeProperty::Disable);             // ä¸”å­—æ®µæœªæ ‡è®°ç¦ç”¨
 
-    // Çé¿ö2£º¸¸ÀàÆôÓÃ°×Ãûµ¥Ä£Ê½ && ×Ö¶Î±»ÏÔÊ½ÆôÓÃ
-    bool case2 = m_parent->m_meta_data.getFlag(NativeProperty::WhiteListFields) &&  // ¸¸Àà±ê¼Ç°×Ãûµ¥Ä£Ê½
-                 m_meta_data.getFlag(NativeProperty::Enable);                       // ÇÒ×Ö¶Î±ê¼ÇÆôÓÃ
+    // æƒ…å†µ2ï¼šçˆ¶ç±»å¯ç”¨ç™½åå•æ¨¡å¼ && å­—æ®µè¢«æ˜¾å¼å¯ç”¨
+    bool case2 = m_parent->m_meta_data.getFlag(NativeProperty::WhiteListFields) &&  // çˆ¶ç±»æ ‡è®°ç™½åå•æ¨¡å¼
+                 m_meta_data.getFlag(NativeProperty::Enable);                       // ä¸”å­—æ®µæ ‡è®°å¯ç”¨
 
-    return case1 || case2;  // Âú×ãÈÎÒ»Ìõ¼ş¼´¿É·ÃÎÊ
+    return case1 || case2;  // æ»¡è¶³ä»»ä¸€æ¡ä»¶å³å¯è®¿é—®
 }

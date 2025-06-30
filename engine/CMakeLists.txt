@@ -75,7 +75,7 @@ endif()
 #add_subdirectory(shader)
 
 # 添加第三方库子目录
-#add_subdirectory(3rdparty)
+add_subdirectory(3rdparty)
 
 # 添加运行时模块子目录
 add_subdirectory(source/runtime)

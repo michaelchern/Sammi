@@ -1,35 +1,36 @@
-#pragma once
+﻿#pragma once
 
-#include "runtime/core/base/hash.h"
-
+#include "runtime/core/base/hash.h"  // 包含哈希函数
 #include <cstdint>
 #include <memory>
 #include <string>
 
-
 /// <summary>
-/// RHI Type
+/// RHI (Render Hardware Interface) 类型定义
 /// </summary>
-namespace Piccolo
+namespace Sammi
 {
-#define RHI_MAX_EXTENSION_NAME_SIZE        256U
-#define RHI_MAX_DESCRIPTION_SIZE           256U
-#define RHI_MAX_MEMORY_TYPES               32U
-#define RHI_MAX_PHYSICAL_DEVICE_NAME_SIZE  256U
-#define RHI_UUID_SIZE                      16U
-#define RHI_MAX_MEMORY_HEAPS               16U
-#define RHI_SUBPASS_EXTERNAL               (~0U)
-#define RHI_QUEUE_FAMILY_IGNORED           (~0U)
-#define RHI_WHOLE_SIZE                     (~0ULL)
-#define RHI_NULL_HANDLE                       nullptr
-#define RHI_SUCCESS                        true
-#define RHI_TRUE                           true
-#define RHI_FALSE                           false
+    // RHI 常量定义
+    #define RHI_MAX_EXTENSION_NAME_SIZE        256U  // 最大扩展名长度
+    #define RHI_MAX_DESCRIPTION_SIZE           256U  // 最大描述长度
+    #define RHI_MAX_MEMORY_TYPES               32U
+    #define RHI_MAX_PHYSICAL_DEVICE_NAME_SIZE  256U
+    #define RHI_UUID_SIZE                      16U
+    #define RHI_MAX_MEMORY_HEAPS               16U
+    #define RHI_SUBPASS_EXTERNAL               (~0U)
+    #define RHI_QUEUE_FAMILY_IGNORED           (~0U)
+    #define RHI_WHOLE_SIZE                     (~0ULL)
+    #define RHI_NULL_HANDLE                    nullptr
+    #define RHI_SUCCESS                        true
+    #define RHI_TRUE                           true
+    #define RHI_FALSE                          false
 
+    // Vulkan 结构体类型枚举（与Vulkan的VkStructureType对应）
     enum RHIStructureType : int
     {
-        RHI_STRUCTURE_TYPE_APPLICATION_INFO = 0,
-        RHI_STRUCTURE_TYPE_INSTANCE_CREATE_INFO = 1,
+        RHI_STRUCTURE_TYPE_APPLICATION_INFO = 0,  // 应用程序信息
+        RHI_STRUCTURE_TYPE_INSTANCE_CREATE_INFO = 1,  // 实例创建信息
+        // ... 200+种不同的结构体类型
         RHI_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO = 2,
         RHI_STRUCTURE_TYPE_DEVICE_CREATE_INFO = 3,
         RHI_STRUCTURE_TYPE_SUBMIT_INFO = 4,
@@ -695,35 +696,40 @@ namespace Piccolo
         RHI_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO_KHR = RHI_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO,
         RHI_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO_KHR = RHI_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO,
         RHI_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT = RHI_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
-        RHI_STRUCTURE_TYPE_MAX_ENUM = 0x7FFFFFFF
+        RHI_STRUCTURE_TYPE_MAX_ENUM = 0x7FFFFFFF  // 最大枚举值
     };
 
+    // 共享模式枚举
     enum RHISharingMode : int
     {
-        RHI_SHARING_MODE_EXCLUSIVE = 0,
-        RHI_SHARING_MODE_CONCURRENT = 1,
+        RHI_SHARING_MODE_EXCLUSIVE = 0,  // 独占模式
+        RHI_SHARING_MODE_CONCURRENT = 1,  // 并发模式
         RHI_SHARING_MODE_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 命令缓冲区级别枚举
     enum RHICommandBufferLevel : int
     {
-        RHI_COMMAND_BUFFER_LEVEL_PRIMARY = 0,
-        RHI_COMMAND_BUFFER_LEVEL_SECONDARY = 1,
+        RHI_COMMAND_BUFFER_LEVEL_PRIMARY = 0,  // 主命令缓冲区
+        RHI_COMMAND_BUFFER_LEVEL_SECONDARY = 1,  // 次级命令缓冲区
         RHI_COMMAND_BUFFER_LEVEL_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 图像类型枚举
     enum RHIImageType : int
     {
-        RHI_IMAGE_TYPE_1D = 0,
-        RHI_IMAGE_TYPE_2D = 1,
-        RHI_IMAGE_TYPE_3D = 2,
+        RHI_IMAGE_TYPE_1D = 0,  // 一维纹理
+        RHI_IMAGE_TYPE_2D = 1,  // 二维纹理
+        RHI_IMAGE_TYPE_3D = 2,  // 三维纹理
         RHI_IMAGE_TYPE_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 像素格式枚举（包含200+种格式）
     enum RHIFormat : int
     {
-        RHI_FORMAT_UNDEFINED = 0,
-        RHI_FORMAT_R4G4_UNORM_PACK8 = 1,
+        RHI_FORMAT_UNDEFINED = 0,  // 未定义格式
+        RHI_FORMAT_R4G4_UNORM_PACK8 = 1,  // 8位无符号归一化RG(4+4)格式
+        // ... 所有标准格式和扩展格式
         RHI_FORMAT_R4G4B4A4_UNORM_PACK16 = 2,
         RHI_FORMAT_B4G4R4A4_UNORM_PACK16 = 3,
         RHI_FORMAT_R5G6B5_UNORM_PACK16 = 4,
@@ -1006,30 +1012,34 @@ namespace Piccolo
         RHI_FORMAT_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 采样数标志位枚举
     enum RHISampleCountFlagBits : int
     {
-        RHI_SAMPLE_COUNT_1_BIT = 0x00000001,
-        RHI_SAMPLE_COUNT_2_BIT = 0x00000002,
+        RHI_SAMPLE_COUNT_1_BIT = 0x00000001,  // 1x采样
+        RHI_SAMPLE_COUNT_2_BIT = 0x00000002,  // 2x采样
         RHI_SAMPLE_COUNT_4_BIT = 0x00000004,
         RHI_SAMPLE_COUNT_8_BIT = 0x00000008,
         RHI_SAMPLE_COUNT_16_BIT = 0x00000010,
         RHI_SAMPLE_COUNT_32_BIT = 0x00000020,
         RHI_SAMPLE_COUNT_64_BIT = 0x00000040,
+        // ... 最高64x采样
         RHI_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 图像平铺模式枚举
     enum RHIImageTiling : int
     {
-        RHI_IMAGE_TILING_OPTIMAL = 0,
-        RHI_IMAGE_TILING_LINEAR = 1,
+        RHI_IMAGE_TILING_OPTIMAL = 0,  // 最优平铺
+        RHI_IMAGE_TILING_LINEAR = 1,  // 线性平铺
         RHI_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT = 1000158000,
         RHI_IMAGE_TILING_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 图像布局枚举（20+种布局状态）
     enum RHIImageLayout : int
     {
-        RHI_IMAGE_LAYOUT_UNDEFINED = 0,
-        RHI_IMAGE_LAYOUT_GENERAL = 1,
+        RHI_IMAGE_LAYOUT_UNDEFINED = 0,  // 未定义布局
+        RHI_IMAGE_LAYOUT_GENERAL = 1,  // 通用布局
         RHI_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL = 2,
         RHI_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL = 3,
         RHI_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL = 4,
@@ -1054,43 +1064,48 @@ namespace Piccolo
         RHI_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR = RHI_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
         RHI_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR = RHI_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
         RHI_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR = RHI_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
+        // ... 各种优化布局
         RHI_IMAGE_LAYOUT_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 图像视图类型枚举
     enum RHIImageViewType : int
     {
-        RHI_IMAGE_VIEW_TYPE_1D = 0,
-        RHI_IMAGE_VIEW_TYPE_2D = 1,
-        RHI_IMAGE_VIEW_TYPE_3D = 2,
-        RHI_IMAGE_VIEW_TYPE_CUBE = 3,
+        RHI_IMAGE_VIEW_TYPE_1D = 0,  // 一维视图
+        RHI_IMAGE_VIEW_TYPE_2D = 1,  // 二维视图
+        RHI_IMAGE_VIEW_TYPE_3D = 2,  // 三维视图
+        RHI_IMAGE_VIEW_TYPE_CUBE = 3,  // 立方体贴图视图
         RHI_IMAGE_VIEW_TYPE_1D_ARRAY = 4,
         RHI_IMAGE_VIEW_TYPE_2D_ARRAY = 5,
         RHI_IMAGE_VIEW_TYPE_CUBE_ARRAY = 6,
         RHI_IMAGE_VIEW_TYPE_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 附件加载操作枚举
     enum RHIAttachmentLoadOp : int
     {
-        RHI_ATTACHMENT_LOAD_OP_LOAD = 0,
-        RHI_ATTACHMENT_LOAD_OP_CLEAR = 1,
-        RHI_ATTACHMENT_LOAD_OP_DONT_CARE = 2,
+        RHI_ATTACHMENT_LOAD_OP_LOAD = 0,  // 加载现有内容
+        RHI_ATTACHMENT_LOAD_OP_CLEAR = 1,  // 清除内容
+        RHI_ATTACHMENT_LOAD_OP_DONT_CARE = 2,  // 不关心内容
         RHI_ATTACHMENT_LOAD_OP_NONE_EXT = 1000400000,
         RHI_ATTACHMENT_LOAD_OP_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 附件存储操作枚举
     enum RHIAttachmentStoreOp : int
     {
-        RHI_ATTACHMENT_STORE_OP_STORE = 0,
-        RHI_ATTACHMENT_STORE_OP_DONT_CARE = 1,
+        RHI_ATTACHMENT_STORE_OP_STORE = 0,  // 存储内容
+        RHI_ATTACHMENT_STORE_OP_DONT_CARE = 1,  // 不关心内容
         RHI_ATTACHMENT_STORE_OP_NONE_KHR = 1000301000,
         RHI_ATTACHMENT_STORE_OP_NONE_QCOM = RHI_ATTACHMENT_STORE_OP_NONE_KHR,
         RHI_ATTACHMENT_STORE_OP_NONE_EXT = RHI_ATTACHMENT_STORE_OP_NONE_KHR,
         RHI_ATTACHMENT_STORE_OP_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 边框颜色枚举
     enum RHIBorderColor : int
     {
-        RHI_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK = 0,
+        RHI_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK = 0,  // 透明黑色（浮点）
         RHI_BORDER_COLOR_INT_TRANSPARENT_BLACK = 1,
         RHI_BORDER_COLOR_FLOAT_OPAQUE_BLACK = 2,
         RHI_BORDER_COLOR_INT_OPAQUE_BLACK = 3,
@@ -1101,10 +1116,11 @@ namespace Piccolo
         RHI_BORDER_COLOR_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 比较操作枚举（用于深度/模板测试）
     enum RHICompareOp : int
     {
-        RHI_COMPARE_OP_NEVER = 0,
-        RHI_COMPARE_OP_LESS = 1,
+        RHI_COMPARE_OP_NEVER = 0,  // 永远不通过
+        RHI_COMPARE_OP_LESS = 1,  // 小于
         RHI_COMPARE_OP_EQUAL = 2,
         RHI_COMPARE_OP_LESS_OR_EQUAL = 3,
         RHI_COMPARE_OP_GREATER = 4,
@@ -1114,10 +1130,11 @@ namespace Piccolo
         RHI_COMPARE_OP_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 描述符类型枚举（20+种类型）
     enum RHIDescriptorType : int
     {
-        RHI_DESCRIPTOR_TYPE_SAMPLER = 0,
-        RHI_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER = 1,
+        RHI_DESCRIPTOR_TYPE_SAMPLER = 0,  // 采样器
+        RHI_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER = 1,  // 组合图像采样器
         RHI_DESCRIPTOR_TYPE_SAMPLED_IMAGE = 2,
         RHI_DESCRIPTOR_TYPE_STORAGE_IMAGE = 3,
         RHI_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER = 4,
@@ -1134,10 +1151,11 @@ namespace Piccolo
         RHI_DESCRIPTOR_TYPE_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 动态状态枚举（50+种可动态修改的状态）
     enum RHIDynamicState : int
     {
-        RHI_DYNAMIC_STATE_VIEWPORT = 0,
-        RHI_DYNAMIC_STATE_SCISSOR = 1,
+        RHI_DYNAMIC_STATE_VIEWPORT = 0,  // 视口
+        RHI_DYNAMIC_STATE_SCISSOR = 1,  // 裁剪区域
         RHI_DYNAMIC_STATE_LINE_WIDTH = 2,
         RHI_DYNAMIC_STATE_DEPTH_BIAS = 3,
         RHI_DYNAMIC_STATE_BLEND_CONSTANTS = 4,
@@ -1616,6 +1634,7 @@ namespace Piccolo
         RHI_DEPENDENCY_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
+    // 标志位类型定义（用于组合标志）
     typedef uint32_t RHIAccessFlags;
     typedef uint32_t RHIImageAspectFlags;
     typedef uint32_t RHIFormatFeatureFlags;
@@ -1681,14 +1700,16 @@ namespace Piccolo
     typedef uint32_t RHISampleMask;
 }
 
-namespace Piccolo
+namespace Sammi
 {
-    enum class PICCOLO_IMAGE_TYPE : uint8_t
+    // 引擎自定义图像类型
+    enum class SAMMI_IMAGE_TYPE : uint8_t
     {
-        PICCOLO_IMAGE_TYPE_UNKNOWM = 0,
-        PICCOLO_IMAGE_TYPE_2D
+        SAMMI_IMAGE_TYPE_UNKNOWM = 0,
+        SAMMI_IMAGE_TYPE_2D
     };
 
+    // 渲染管线类型
     enum class RENDER_PIPELINE_TYPE : uint8_t
     {
         FORWARD_PIPELINE = 0,
@@ -1729,7 +1750,7 @@ namespace Piccolo
         void*    m_pixels {nullptr};
 
         RHIFormat m_format = RHI_FORMAT_MAX_ENUM;
-        PICCOLO_IMAGE_TYPE   m_type { PICCOLO_IMAGE_TYPE::PICCOLO_IMAGE_TYPE_UNKNOWM};
+        SAMMI_IMAGE_TYPE   m_type { SAMMI_IMAGE_TYPE::SAMMI_IMAGE_TYPE_UNKNOWM};
 
         TextureData() = default;
         ~TextureData()
@@ -1821,15 +1842,15 @@ namespace Piccolo
         std::shared_ptr<TextureData> m_occlusion_texture;
         std::shared_ptr<TextureData> m_emissive_texture;
     };
-} // namespace Piccolo
+}
 
 template<>
-struct std::hash<Piccolo::MeshSourceDesc>
+struct std::hash<Sammi::MeshSourceDesc>
 {
     size_t operator()(const Piccolo::MeshSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
 };
 template<>
-struct std::hash<Piccolo::MaterialSourceDesc>
+struct std::hash<Sammi::MaterialSourceDesc>
 {
-    size_t operator()(const Piccolo::MaterialSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
+    size_t operator()(const Sammi::MaterialSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
 };

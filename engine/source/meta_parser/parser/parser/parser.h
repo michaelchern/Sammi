@@ -44,7 +44,7 @@ public:
 
     // 执行解析过程
     // return: 0成功，非零错误码
-    int  parse(void);
+    int parse(void);
 
     // 调用所有注册的生成器输出文件
     void generateFiles(void);

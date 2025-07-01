@@ -83,13 +83,13 @@ namespace Sammi
         Radian  operator-(const Radian& r) const { return Radian(m_rad - r.m_rad); }
         // 减法运算符（角度）
         Radian  operator-(const Degree& d) const;
-		// 减法复合赋值运算符（弧度）
+        // 减法复合赋值运算符（弧度）
         Radian& operator-=(const Radian& r)
         {
             m_rad -= r.m_rad;
             return *this;
         }
-		// 减法复合赋值运算符（角度）
+        // 减法复合赋值运算符（角度）
         Radian& operator-=(const Degree& d);
         // 乘法运算符（标量）
         Radian  operator*(float f) const { return Radian(m_rad * f); }
@@ -144,7 +144,7 @@ namespace Sammi
         float valueDegrees() const { return m_deg; }
         // 将角度转换为弧度（实现于文件底部）
         float valueRadians() const;
-		// 将角度转换为当前角度单位（全局设置）的值
+        // 将角度转换为当前角度单位（全局设置）的值
         float valueAngleUnits() const;
 
         // 一元+运算符

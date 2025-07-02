@@ -47,15 +47,15 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace)
 // 判断是否需要为此类生成代码
 bool Class::shouldCompile(void) const
 {
-    return shouldCompileFields()|| shouldCompileMethods();  // 需要生成字段或方法代码
+    return shouldCompileFields() || shouldCompileMethods();  // 需要生成字段或方法代码
 }
 
 // 判断是否需要生成字段代码
 bool Class::shouldCompileFields(void) const
 {
     // 根据元数据标记判断：
-    // - NativeProperty::All: 生成所有内容
-    // - NativeProperty::Fields: 生成所有字段
+    // - NativeProperty::All:             生成所有内容
+    // - NativeProperty::Fields:          生成所有字段
     // - NativeProperty::WhiteListFields: 仅生成白名单字段
     return m_meta_data.getFlag(NativeProperty::All) ||
            m_meta_data.getFlag(NativeProperty::Fields) ||

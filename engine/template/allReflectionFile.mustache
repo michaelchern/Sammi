@@ -1,0 +1,18 @@
+﻿#pragma once
+#include "runtime/core/meta/reflection/reflection.h"
+#include "_generated/serializer/all_serializer.h"
+{{#include_headfiles}}
+#include "{{headfile_name}}"
+{{/include_headfiles}}
+
+namespace Sammi
+{
+    namespace Reflection
+    {
+        void TypeMetaRegister::metaRegister()
+        {
+            {{#sourefile_names}}TypeWrappersRegister::{{sourefile_name_upper_camel_case}}();
+            {{/sourefile_names}}
+        }
+    }
+}

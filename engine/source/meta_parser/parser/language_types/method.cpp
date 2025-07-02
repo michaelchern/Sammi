@@ -4,9 +4,9 @@
 
 // 方法构造函数：从AST节点解析方法信息
 Method::Method(const Cursor& cursor, const Namespace& current_namespace, Class* parent)
-    : TypeInfo(cursor, current_namespace),  // 初始化基类
-      m_parent(parent),                     // 指向所属父类
-      m_name(cursor.getSpelling())          // 原始方法名
+       : TypeInfo(cursor, current_namespace),  // 初始化基类
+         m_parent(parent),                     // 指向所属父类
+         m_name(cursor.getSpelling())          // 原始方法名
 {
     // 注意：此处仅初始化基础信息
     // 实际实现可能需要解析：

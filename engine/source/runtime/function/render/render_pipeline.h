@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/render_pipeline_base.h"
 
-namespace Piccolo
+namespace Sammi
 {
     class RenderPipeline : public RenderPipelineBase
     {
@@ -23,4 +23,4 @@ namespace Piccolo
 
         void setSelectedAxis(size_t selected_axis);
     };
-} // namespace Piccolo
+}

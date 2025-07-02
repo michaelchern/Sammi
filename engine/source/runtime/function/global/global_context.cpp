@@ -13,7 +13,7 @@
 #include "runtime/function/framework/world/world_manager.h"        // 场景世界管理
 #include "runtime/function/input/input_system.h"                   // 输入系统
 #include "runtime/function/particle/particle_manager.h"            // 粒子系统
-#include "runtime/function/physics/physics_manager.h"              // 物理系统
+//#include "runtime/function/physics/physics_manager.h"              // 物理系统
 #include "runtime/function/render/debugdraw/debug_draw_manager.h"  // 调试绘制
 #include "runtime/function/render/render_debug_config.h"           // 渲染调试配置
 #include "runtime/function/render/render_system.h"                 // 渲染系统
@@ -41,8 +41,8 @@ namespace Sammi
         m_asset_manager = std::make_shared<AssetManager>();
 
         // 物理系统 (5) - 初始化物理世界
-        m_physics_manager = std::make_shared<PhysicsManager>();
-        m_physics_manager->initialize();
+        //m_physics_manager = std::make_shared<PhysicsManager>();
+        //m_physics_manager->initialize();
 
         // 世界管理 (6) - 创建和管理游戏场景和实体
         m_world_manager = std::make_shared<WorldManager>();
@@ -94,8 +94,8 @@ namespace Sammi
         m_world_manager.reset();
 
         // 物理系统 (5)
-        m_physics_manager->clear();     // 清理物理世界
-        m_physics_manager.reset();
+        //m_physics_manager->clear();     // 清理物理世界
+        //m_physics_manager.reset();
 
         // 输入系统 (8)
         m_input_system->clear();        // 断开输入设备

@@ -51,7 +51,7 @@ public:
     std::string m_qualified_name;
 
     // 字段（成员变量）列表
-    SharedPtrVector<Field> m_fields;
+    SharedPtrVector<Field>  m_fields;
     // 方法（成员函数）列表
     SharedPtrVector<Method> m_methods;
 

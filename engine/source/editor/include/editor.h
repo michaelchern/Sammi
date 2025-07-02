@@ -16,10 +16,10 @@ namespace Sammi
 
     public:
         SammiEditor();             // 构造函数
-        virtual ~PiccoloEditor();  // 虚析构函数（支持继承）
+        virtual ~SammiEditor();  // 虚析构函数（支持继承）
 
         // 使用引擎实例初始化编辑器
-        void initialize(PiccoloEngine* engine_runtime);
+        void initialize(SammiEngine* engine_runtime);
 
         // 清理编辑器资源
         void clear();

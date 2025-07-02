@@ -3,7 +3,7 @@
 #include "common/schema_module.h"  // 包含模块元数据结构定义
 
 #include <functional>  // 用于std::function
-#include <string>  // 字符串处理
+#include <string>      // 字符串处理
 
 namespace Generator
 {
@@ -12,12 +12,12 @@ namespace Generator
     {
     public:
         // 构造函数：初始化生成器基本参数
-        GeneratorInterface(std::string out_path,  // 生成代码的输出目录
-                           std::string root_path,  // 项目根目录（用于路径计算）
+        GeneratorInterface(std::string out_path,                                      // 生成代码的输出目录
+                           std::string root_path,                                     // 项目根目录（用于路径计算）
                            std::function<std::string(std::string)> get_include_func)  // 包含文件路径获取函数
-            : m_out_path(out_path),  // 初始化输出路径
-              m_root_path(root_path),  // 初始化项目根路径
-              m_get_include_func(get_include_func)   // 初始化包含文件获取函数
+            : m_out_path(out_path),                                                   // 初始化输出路径
+              m_root_path(root_path),                                                 // 初始化项目根路径
+              m_get_include_func(get_include_func)                                    // 初始化包含文件获取函数
         {}
 
         // 纯虚函数：生成代码的主入口，必须由子类实现
@@ -51,8 +51,8 @@ namespace Generator
 
         // 生成器配置数据
 
-        std::string                             m_out_path {"gen_src"};  // 输出目录（如"gen_src"）
-        std::string                             m_root_path;             // 项目根路径（用于计算相对路径）
+        std::string m_out_path {"gen_src"};  // 输出目录（如"gen_src"）
+        std::string m_root_path;             // 项目根路径（用于计算相对路径）
 
         // 函数对象：根据类型名获取头文件包含路径
         // 例如：输入"std::vector" 返回 "<vector>"

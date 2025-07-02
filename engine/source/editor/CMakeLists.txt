@@ -63,4 +63,4 @@ endif()
 add_custom_command(TARGET ${TARGET_NAME} ${POST_BUILD_COMMANDS})
 
 # 预编译头设置：导出头文件列表到父作用域（中文引号需改为英文）
-set(PICCOLO_EDITOR_HEADS “${EDITOR_HEADERS}” PARENT_SCOPE)
+set(SAMMI_EDITOR_HEADS “${EDITOR_HEADERS}” PARENT_SCOPE)

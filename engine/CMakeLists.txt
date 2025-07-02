@@ -1,5 +1,4 @@
-﻿
-# 设置引擎根目录为项目根目录下的engine子目录
+﻿# 设置引擎根目录为项目根目录下的engine子目录
 set(ENGINE_ROOT_DIR "${SAMMI_ROOT_DIR}/engine")
 
 # 设置第三方库目录路径
@@ -94,5 +93,5 @@ include(source/precompile/precompile.cmake)
 #set_target_properties("${CODEGEN_TARGET}" PROPERTIES FOLDER "Engine" )
 
 # 设置预编译目标依赖关系
-#add_dependencies(SammiRuntime "${CODEGEN_TARGET}")
-#add_dependencies("${CODEGEN_TARGET}" "SammiParser")
+add_dependencies(SammiRuntime "${CODEGEN_TARGET}")
+add_dependencies("${CODEGEN_TARGET}" "SammiParser")

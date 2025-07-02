@@ -53,16 +53,15 @@ namespace Sammi
         // 渲染通道模块 --------------------------
         // 这些成员描述了现代渲染管线的典型阶段
         // -------------------------------------
-        std::shared_ptr<RenderPassBase> m_directional_light_pass;  // 方向光阴影处理通道
+        std::shared_ptr<RenderPassBase> m_directional_light_pass;   // 方向光阴影处理通道
         std::shared_ptr<RenderPassBase> m_point_light_shadow_pass;  // 点光源阴影处理通道
-        std::shared_ptr<RenderPassBase> m_main_camera_pass;  // 主摄像机渲染通道（核心几何通道）
-        std::shared_ptr<RenderPassBase> m_color_grading_pass;  // 颜色分级/校正处理通道
-        std::shared_ptr<RenderPassBase> m_fxaa_pass;  // FXAA抗锯齿处理通道
-        std::shared_ptr<RenderPassBase> m_tone_mapping_pass;  // 色调映射处理通道 (HDR->LDR)
-        std::shared_ptr<RenderPassBase> m_ui_pass;  // UI元素渲染通道
-        std::shared_ptr<RenderPassBase> m_combine_ui_pass;  // 场景与UI合成通道
-        std::shared_ptr<RenderPassBase> m_pick_pass;  // 对象拾取专用通道
-        std::shared_ptr<RenderPassBase> m_particle_pass;  // 粒子系统渲染通道
-
+        std::shared_ptr<RenderPassBase> m_main_camera_pass;         // 主摄像机渲染通道（核心几何通道）
+        std::shared_ptr<RenderPassBase> m_color_grading_pass;       // 颜色分级/校正处理通道
+        std::shared_ptr<RenderPassBase> m_fxaa_pass;                // FXAA抗锯齿处理通道
+        std::shared_ptr<RenderPassBase> m_tone_mapping_pass;        // 色调映射处理通道 (HDR->LDR)
+        std::shared_ptr<RenderPassBase> m_ui_pass;                  // UI元素渲染通道
+        std::shared_ptr<RenderPassBase> m_combine_ui_pass;          // 场景与UI合成通道
+        std::shared_ptr<RenderPassBase> m_pick_pass;                // 对象拾取专用通道
+        std::shared_ptr<RenderPassBase> m_particle_pass;            // 粒子系统渲染通道
     };
 }

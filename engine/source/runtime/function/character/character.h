@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/transform.h"
 
@@ -9,7 +9,7 @@
 
 namespace Piccolo
 {
-    class Character
+    class Sammi
     {
         inline static const float s_camera_blend_time {0.3f};
 
@@ -43,4 +43,4 @@ namespace Piccolo
         CameraMode m_original_camera_mode;
         bool       m_is_free_camera{false};
     };
-} // namespace Piccolo
+}

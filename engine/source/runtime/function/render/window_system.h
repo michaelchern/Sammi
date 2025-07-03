@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -7,13 +7,13 @@
 #include <functional>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     struct WindowCreateInfo
     {
         int         width {1280};
         int         height {720};
-        const char* title {"Piccolo"};
+        const char* title {"Sammi"};
         bool        is_fullscreen {false};
     };
 
@@ -213,4 +213,4 @@ namespace Piccolo
 
 
     };
-} // namespace Piccolo
+}

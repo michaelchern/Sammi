@@ -1,9 +1,9 @@
-#include "runtime/function/render/render_scene.h"
+﻿#include "runtime/function/render/render_scene.h"
 #include "runtime/function/render/render_helper.h"
 #include "runtime/function/render/render_pass.h"
 #include "runtime/function/render/render_resource.h"
 
-namespace Piccolo
+namespace Sammi
 {
     void RenderScene::clear()
     {
@@ -242,4 +242,4 @@ namespace Piccolo
     {
         // TODO
     }
-} // namespace Piccolo
+}

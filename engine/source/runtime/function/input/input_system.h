@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/math.h"
 
-namespace Piccolo
+namespace Sammi
 {
     enum class GameCommand : unsigned int
     {
@@ -50,4 +50,4 @@ namespace Piccolo
         int m_last_cursor_x {0};
         int m_last_cursor_y {0};
     };
-} // namespace Piccolo
+}

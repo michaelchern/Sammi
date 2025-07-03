@@ -1,4 +1,4 @@
-#include "runtime/function/character/character.h"
+﻿#include "runtime/function/character/character.h"
 
 #include "runtime/engine.h"
 #include "runtime/function/framework/component/motor/motor_component.h"
@@ -6,7 +6,7 @@
 #include "runtime/function/global/global_context.h"
 #include "runtime/function/input/input_system.h"
 
-namespace Piccolo
+namespace Sammi
 {
     Character::Character(std::shared_ptr<GObject> character_object) { setObject(character_object); }
 
@@ -103,4 +103,4 @@ namespace Piccolo
             camera_component->setCameraMode(m_original_camera_mode);
         }
     }
-} // namespace Piccolo
+}

@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/vector3.h"
 #include "runtime/resource/res_type/components/rigid_body.h"
 #include "runtime/resource/res_type/data/basic_shape.h"
 
-namespace Piccolo
+namespace Sammi
 {
     enum SweepPass
     {
@@ -34,4 +34,4 @@ namespace Piccolo
         Capsule        m_capsule;
         RigidBodyShape m_rigidbody_shape;
     };
-} // namespace Piccolo
+}

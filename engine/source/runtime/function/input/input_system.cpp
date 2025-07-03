@@ -1,4 +1,4 @@
-#include "runtime/function/input/input_system.h"
+﻿#include "runtime/function/input/input_system.h"
 
 #include "core/base/macro.h"
 
@@ -10,7 +10,7 @@
 
 #include <GLFW/glfw3.h>
 
-namespace Piccolo
+namespace Sammi
 {
     unsigned int k_complement_control_command = 0xFFFFFFFF;
 
@@ -167,4 +167,4 @@ namespace Piccolo
             m_game_command |= (unsigned int)GameCommand::invalid;
         }
     }
-} // namespace Piccolo
+}

@@ -1,8 +1,8 @@
-#include "runtime/platform/path/path.h"
+﻿#include "runtime/platform/path/path.h"
 
 using namespace std;
 
-namespace Piccolo
+namespace Sammi
 {
     const filesystem::path Path::getRelativePath(const filesystem::path& directory,
                                                  const filesystem::path& file_path)
@@ -38,4 +38,4 @@ namespace Piccolo
 
         return file_pure_name;
     }
-} // namespace Piccolo
+}

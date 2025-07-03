@@ -1,4 +1,4 @@
-#include "runtime/function/controller/character_controller.h"
+﻿#include "runtime/function/controller/character_controller.h"
 
 #include "runtime/core/base/macro.h"
 
@@ -7,7 +7,7 @@
 #include "runtime/function/global/global_context.h"
 #include "runtime/function/physics/physics_scene.h"
 
-namespace Piccolo
+namespace Sammi
 {
     CharacterController::CharacterController(const Capsule& capsule) : m_capsule(capsule)
     {
@@ -41,4 +41,4 @@ namespace Piccolo
 
         return final_position;
     }
-} // namespace Piccolo
+}

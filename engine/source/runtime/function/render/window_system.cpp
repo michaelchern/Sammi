@@ -1,8 +1,8 @@
-#include "runtime/function/render/window_system.h"
+﻿#include "runtime/function/render/window_system.h"
 
 #include "runtime/core/base/macro.h"
 
-namespace Piccolo
+namespace Sammi
 {
     WindowSystem::~WindowSystem()
     {
@@ -61,4 +61,4 @@ namespace Piccolo
         m_is_focus_mode = mode;
         glfwSetInputMode(m_window, GLFW_CURSOR, m_is_focus_mode ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
-} // namespace Piccolo
+}

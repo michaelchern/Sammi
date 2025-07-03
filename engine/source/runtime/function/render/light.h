@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/vector3.h"
 
@@ -6,7 +6,7 @@
 
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     struct PointLight
     {
@@ -68,4 +68,4 @@ namespace Piccolo
         std::shared_ptr<BufferData> m_buffer;
     };
 
-} // namespace Piccolo
+}

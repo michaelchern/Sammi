@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/render_resource_base.h"
 #include "runtime/function/render/render_type.h"
@@ -15,7 +15,7 @@
 #include <vector>
 #include <cmath>
 
-namespace Piccolo
+namespace Sammi
 {
     class RHI;
     class RenderPassBase;
@@ -187,4 +187,4 @@ namespace Piccolo
                                VulkanMesh&          now_mesh);
         void updateTextureImageData(std::shared_ptr<RHI> rhi, const TextureDataToUpdate& texture_data);
     };
-} // namespace Piccolo
+}

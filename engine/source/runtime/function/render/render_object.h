@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/matrix4.h"
 #include "runtime/function/framework/object/object_id_allocator.h"
@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     REFLECTION_TYPE(GameObjectMeshDesc)
     STRUCT(GameObjectMeshDesc, Fields)
@@ -94,10 +94,10 @@ namespace Piccolo
         GObjectID                       m_go_id {k_invalid_gobject_id};
         std::vector<GameObjectPartDesc> m_object_parts;
     };
-} // namespace Piccolo
+}
 
 template<>
-struct std::hash<Piccolo::GameObjectPartId>
+struct std::hash<Sammi::GameObjectPartId>
 {
-    size_t operator()(const Piccolo::GameObjectPartId& rhs) const noexcept { return rhs.getHashValue(); }
+    size_t operator()(const Sammi::GameObjectPartId& rhs) const noexcept { return rhs.getHashValue(); }
 };

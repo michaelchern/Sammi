@@ -621,7 +621,7 @@ namespace Sammi
 
     void VulkanRHI::createInstance()
     {
-        // validation layer will be enabled in debug mode
+        // 检查验证层支持（如果启用）
         if (m_enable_validation_Layers && !checkValidationLayerSupport())
         {
             LOG_ERROR("validation layers requested, but not available!");
@@ -629,20 +629,21 @@ namespace Sammi
 
         m_vulkan_api_version = VK_API_VERSION_1_0;
 
-        // app info
+        // 设置应用程序信息
         VkApplicationInfo appInfo {};
         appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName   = "piccolo_renderer";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName        = "Piccolo";
-        appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion         = m_vulkan_api_version;
+        appInfo.pApplicationName   = "Sammi_renderer";          // 应用程序名称
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);  // 应用版本
+        appInfo.pEngineName        = "Sammi";                   // 引擎名称
+        appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);  // 引擎版本
+        appInfo.apiVersion         = m_vulkan_api_version;      // Vulkan API 版本
 
-        // create info
+        // 设置实例创建信息
         VkInstanceCreateInfo instance_create_info {};
         instance_create_info.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        instance_create_info.pApplicationInfo = &appInfo; // the appInfo is stored here
+        instance_create_info.pApplicationInfo = &appInfo; 
 
+        // 获取并设置必需扩展
         auto extensions                              = getRequiredExtensions();
         instance_create_info.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
         instance_create_info.ppEnabledExtensionNames = extensions.data();

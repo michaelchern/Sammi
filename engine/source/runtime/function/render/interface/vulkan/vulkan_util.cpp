@@ -1,4 +1,4 @@
-#include "runtime/function/render/interface/vulkan/vulkan_util.h"
+﻿#include "runtime/function/render/interface/vulkan/vulkan_util.h"
 #include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
 #include "runtime/core/base/macro.h"
 
@@ -7,7 +7,7 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace Piccolo
+namespace Sammi
 {
     std::unordered_map<uint32_t, VkSampler> VulkanUtil::m_mipmap_sampler_map;
     VkSampler                               VulkanUtil::m_nearest_sampler = VK_NULL_HANDLE;
@@ -1033,4 +1033,4 @@ namespace Piccolo
         vkDestroySampler(device, m_linear_sampler, nullptr);
         m_linear_sampler = VK_NULL_HANDLE;
     }
-} // namespace Piccolo
+}

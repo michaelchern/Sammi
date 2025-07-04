@@ -1,9 +1,9 @@
-#include "debug_draw_buffer.h"
+﻿#include "debug_draw_buffer.h"
 #include <stdexcept>
 #include "runtime/function/global/global_context.h"
 #include "runtime/function/render/render_system.h"
 
-namespace Piccolo
+namespace Sammi
 {
     void DebugDrawAllocator::initialize(DebugDrawFont* font)
     { 

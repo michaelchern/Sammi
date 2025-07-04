@@ -663,10 +663,10 @@ namespace Sammi
             instance_create_info.pNext             = nullptr;
         }
 
-        // create m_vulkan_context._instance
+        // 创建 Vulkan 实例
         if (vkCreateInstance(&instance_create_info, nullptr, &m_instance) != VK_SUCCESS)
         {
-            LOG_ERROR("vk create instance");
+            LOG_ERROR("Failed to create instance!");
         }
     }
 

@@ -1,4 +1,4 @@
-#include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
+﻿#include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
 #include "runtime/function/render/interface/vulkan/vulkan_util.h"
 
 #include "runtime/function/render/window_system.h"
@@ -74,7 +74,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace Piccolo
+namespace Sammi
 {
     VulkanRHI::~VulkanRHI()
     {

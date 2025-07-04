@@ -45,7 +45,7 @@ if(WIN32)
     # Windows平台设置GLSL编译器路径
     set(glslangValidator_executable ${THIRD_PARTY_DIR}/VulkanSDK/bin/Win32/glslangValidator.exe)
     # 添加Vulkan层路径编译定义
-    add_compile_definitions("PICCOLO_VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin/Win32")
+    add_compile_definitions("SAMMI_VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin/Win32")
 elseif(UNIX)
     if(APPLE)
       # macOS平台设置Vulkan库文件
@@ -53,16 +53,16 @@ elseif(UNIX)
       # macOS平台设置GLSL编译器路径
       set(glslangValidator_executable ${THIRD_PARTY_DIR}/VulkanSDK/bin/MacOS/glslangValidator)
       # 添加Vulkan层路径编译定义
-      add_compile_definitions("PICCOLO_VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin/MacOS")
+      add_compile_definitions("SAMMI_VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin/MacOS")
       # 添加Vulkan安装客户端驱动(ICD)文件定义
-      add_compile_definitions("PICCOLO_VK_ICD_FILENAMES=${THIRD_PARTY_DIR}/VulkanSDK/bin/MacOS/MoltenVK_icd.json")
+      add_compile_definitions("SAMMI_VK_ICD_FILENAMES=${THIRD_PARTY_DIR}/VulkanSDK/bin/MacOS/MoltenVK_icd.json")
     else()
       # Linux平台设置Vulkan库文件
       set(vulkan_lib ${THIRD_PARTY_DIR}/VulkanSDK/lib/Linux/libvulkan.so.1)
       # Linux平台设置GLSL编译器路径
       set(glslangValidator_executable ${THIRD_PARTY_DIR}/VulkanSDK/bin/Linux/glslangValidator)
       # 添加Vulkan层路径编译定义
-      add_compile_definitions("PICCOLO_VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin/Linux")
+      add_compile_definitions("SAMMI_VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin/Linux")
     endif()
 else()
   # 未知平台报错退出

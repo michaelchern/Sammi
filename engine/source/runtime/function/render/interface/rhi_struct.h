@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/render_type.h"
 #include <optional>
-namespace Piccolo
+
+namespace Sammi
 {
     /////////////////////////////////////////////////
     #define RHI_DELETE_PTR(x) delete x; x = nullptr;

@@ -3607,4 +3607,4 @@ namespace Sammi
         m_current_frame_index = index;
     }
 
-} // namespace Piccolo
+}

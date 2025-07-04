@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/particle/particle_common.h"
 #include "runtime/function/particle/particle_manager.h"
 #include "runtime/function/render/render_pass.h"
 #include "runtime/function/render/render_resource.h"
 
-namespace Piccolo
+namespace Sammi
 {
     struct ParticlePassInitInfo : RenderPassInitInfo
     {
@@ -205,4 +205,4 @@ namespace Piccolo
 
         std::vector<ParticleEmitterTransformDesc> m_emitter_transform_indices;
     };
-} // namespace Piccolo
+}

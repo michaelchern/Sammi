@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -9,7 +9,8 @@
 #include <functional>
 
 #include "rhi_struct.h"
-namespace Piccolo
+
+namespace Sammi
 {
     class WindowSystem;
 
@@ -175,4 +176,4 @@ namespace Piccolo
     };
 
     inline RHI::~RHI() = default;
-} // namespace Piccolo
+}

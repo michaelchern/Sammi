@@ -42,6 +42,7 @@ namespace Sammi
                           RHIMemoryPropertyFlags properties,
                           RHIBuffer* &buffer,
                           RHIDeviceMemory* &buffer_memory) override;
+
         void createBufferAndInitialize(RHIBufferUsageFlags usage,
                                        RHIMemoryPropertyFlags properties,
                                        RHIBuffer*& buffer,
@@ -49,6 +50,7 @@ namespace Sammi
                                        RHIDeviceSize size,
                                        void* data = nullptr,
                                        int datasize = 0) override;
+
         // 使用VMA（Vulkan内存分配器）创建缓冲区
         bool createBufferVMA(VmaAllocator allocator,
                              const RHIBufferCreateInfo* pBufferCreateInfo,
@@ -56,6 +58,7 @@ namespace Sammi
                              RHIBuffer* &pBuffer,
                              VmaAllocation* pAllocation,
                              VmaAllocationInfo* pAllocationInfo) override;
+
         // 带对齐要求的VMA缓冲区创建
         bool createBufferWithAlignmentVMA(VmaAllocator allocator,
                                           const RHIBufferCreateInfo* pBufferCreateInfo,
@@ -84,6 +87,7 @@ namespace Sammi
                          RHIImageCreateFlags image_create_flags,
                          uint32_t array_layers,
                          uint32_t miplevels) override;
+
         void createImageView(RHIImage* image,
                              RHIFormat format,
                              RHIImageAspectFlags image_aspect_flags,

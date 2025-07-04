@@ -1083,7 +1083,8 @@ namespace Sammi
         float maxDepth;
     };
 
-    struct RHIRenderPassBeginInfo {
+    struct RHIRenderPassBeginInfo
+    {
         RHIStructureType sType;
         const void* pNext;
         RHIRenderPass* renderPass;
@@ -1093,29 +1094,34 @@ namespace Sammi
         const RHIClearValue* pClearValues;
     };
 
-    struct RHIClearDepthStencilValue {
+    struct RHIClearDepthStencilValue
+    {
         float depth;
         uint32_t stencil;
     };
 
-    union RHIClearColorValue {
+    union RHIClearColorValue
+    {
         float float32[4];
         int32_t int32[4];
         uint32_t uint32[4];
     };
 
-    union RHIClearValue {
+    union RHIClearValue
+    {
         RHIClearColorValue color;
         RHIClearDepthStencilValue depthStencil;
     };
 
-    struct RHIClearRect {
+    struct RHIClearRect
+    {
         RHIRect2D rect;
         uint32_t baseArrayLayer;
         uint32_t layerCount;
     };
 
-    struct RHIClearAttachment {
+    struct RHIClearAttachment
+    {
         RHIImageAspectFlags aspectMask;
         uint32_t colorAttachment;
         RHIClearValue clearValue;
@@ -1146,6 +1152,7 @@ namespace Sammi
         bool isComplete() { return graphics_family.has_value() && present_family.has_value() && m_compute_family.has_value();; }
     };
 
+    // 交换链支持详情 (Vulkan特定)
     struct SwapChainSupportDetails
     {
         VkSurfaceCapabilitiesKHR        capabilities;

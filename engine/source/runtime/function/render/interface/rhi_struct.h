@@ -1,41 +1,43 @@
 ﻿#pragma once
 
-#include "runtime/function/render/render_type.h"
-#include <optional>
+#include "runtime/function/render/render_type.h"  // 包含渲染类型定义
+#include <optional>                               // 用于可选值容器
 
 namespace Sammi
 {
-    /////////////////////////////////////////////////
-    #define RHI_DELETE_PTR(x) delete x; x = nullptr;
+    ////////////////// 宏定义 //////////////////
+    #define RHI_DELETE_PTR(x) delete x; x = nullptr;  // 安全删除指针宏
 
-    ////////////////////class////////////////////////
-    class RHIBuffer { };
-    class RHIBufferView { };
-    class RHICommandBuffer { };
-    class RHICommandPool { };
-    class RHIDescriptorPool { };
-    class RHIDescriptorSet { };
-    class RHIDescriptorSetLayout { };
-    class RHIDevice { };
-    class RHIDeviceMemory { };
-    class RHIEvent { };
-    class RHIFence { };
-    class RHIFramebuffer { };
-    class RHIImage { };
-    class RHIImageView { };
-    class RHIInstance { };
-    class RHIQueue { };
-    class RHIPhysicalDevice { };
-    class RHIPipeline { };
-    class RHIPipelineCache { };
-    class RHIPipelineLayout { };
-    class RHIRenderPass { };
-    class RHISampler { };
-    class RHISemaphore { };
-    class RHIShader { };
+    ////////////////// 空类声明 //////////////////
+    // 以下是RHI接口的抽象类声明，实际实现在具体渲染API中
+    class RHIBuffer { };               // 缓冲区对象
+    class RHIBufferView { };           // 缓冲区视图
+    class RHICommandBuffer { };        // 命令缓冲区
+    class RHICommandPool { };          // 命令池
+    class RHIDescriptorPool { };       // 描述符池
+    class RHIDescriptorSet { };        // 描述符集
+    class RHIDescriptorSetLayout { };  // 描述符集布局
+    class RHIDevice { };               // 逻辑设备
+    class RHIDeviceMemory { };         // 设备内存
+    class RHIEvent { };                // 事件对象
+    class RHIFence { };                // 栅栏同步对象
+    class RHIFramebuffer { };          // 帧缓冲
+    class RHIImage { };                // 图像对象
+    class RHIImageView { };            // 图像视图
+    class RHIInstance { };             // Vulkan实例
+    class RHIQueue { };                // 命令队列
+    class RHIPhysicalDevice { };       // 物理设备
+    class RHIPipeline { };             // 管线对象
+    class RHIPipelineCache { };        // 管线缓存
+    class RHIPipelineLayout { };       // 管线布局
+    class RHIRenderPass { };           // 渲染通道
+    class RHISampler { };              // 采样器
+    class RHISemaphore { };            // 信号量
+    class RHIShader { };               // 着色器模块
 
 
-    ////////////////////struct//////////////////////////
+    ////////////////// 前向声明结构体 //////////////////
+    // 为保持编译效率而做的声明
     struct RHIMemoryBarrier;
     struct RHICopyDescriptorSet;
     struct RHIDescriptorImageInfo;
@@ -121,19 +123,24 @@ namespace Sammi
     union RHIClearColorValue;
     struct RHIClearDepthStencilValue;
 
-    ////////////////////struct declaration////////////////////////
-    struct RHIMemoryBarrier {
-        RHIStructureType sType;
-        const void* pNext;
-        RHIAccessFlags srcAccessMask;
-        RHIAccessFlags dstAccessMask;
+    ////////////////// 具体结构体实现 //////////////////
+
+    // 内存屏障 (用于同步资源访问)
+    struct RHIMemoryBarrier
+    {
+        RHIStructureType sType;        // 结构类型
+        const void* pNext;             // 扩展指针
+        RHIAccessFlags srcAccessMask;  // 源访问掩码
+        RHIAccessFlags dstAccessMask;  // 目标访问掩码
     };
 
-    struct RHICopyDescriptorSet {
+    // 描述符复制结构
+    struct RHICopyDescriptorSet
+    {
         RHIStructureType sType;
         const void* pNext;
-        RHIDescriptorSet* srcSet;
-        uint32_t srcBinding;
+        RHIDescriptorSet* srcSet;  // 源描述符集
+        uint32_t srcBinding;       // 源绑定位置
         uint32_t srcArrayElement;
         RHIDescriptorSet* dstSet;
         uint32_t dstBinding;
@@ -141,30 +148,37 @@ namespace Sammi
         uint32_t descriptorCount;
     };
 
-    struct RHIDescriptorImageInfo {
-        RHISampler* sampler;
-        RHIImageView* imageView;
-        RHIImageLayout imageLayout;
+    // 描述符图像信息
+    struct RHIDescriptorImageInfo
+    {
+        RHISampler* sampler;         // 关联采样器
+        RHIImageView* imageView;     // 关联图像视图
+        RHIImageLayout imageLayout;  // 图像布局
     };
 
-    struct RHIDescriptorBufferInfo {
+
+    struct RHIDescriptorBufferInfo
+    {
         RHIBuffer* buffer;
         RHIDeviceSize offset;
         RHIDeviceSize range;
     };
 
-    struct RHIOffset2D {
+    struct RHIOffset2D
+    {
         int32_t x;
         int32_t y;
     };
 
-    struct RHISpecializationMapEntry {
+    struct RHISpecializationMapEntry
+    {
         uint32_t constantID;
         uint32_t offset;
         size_t size;
     };
 
-    struct RHIBufferMemoryBarrier {
+    struct RHIBufferMemoryBarrier
+    {
         RHIStructureType sType;
         const void* pNext;
         RHIAccessFlags srcAccessMask;
@@ -176,7 +190,8 @@ namespace Sammi
         RHIDeviceSize size;
     };
 
-    struct RHIImageSubresourceRange {
+    struct RHIImageSubresourceRange
+    {
         RHIImageAspectFlags aspectMask;
         uint32_t baseMipLevel;
         uint32_t levelCount;
@@ -184,7 +199,8 @@ namespace Sammi
         uint32_t layerCount;
     };
 
-    struct RHIImageMemoryBarrier {
+    struct RHIImageMemoryBarrier
+    {
         RHIStructureType sType;
         const void* pNext;
         RHIAccessFlags srcAccessMask;
@@ -197,12 +213,14 @@ namespace Sammi
         RHIImageSubresourceRange subresourceRange;
     };
 
-    struct RHIExtent2D {
+    struct RHIExtent2D
+    {
         uint32_t width;
         uint32_t height;
     };
 
-    struct RHIExtent3D {
+    struct RHIExtent3D
+    {
         uint32_t width;
         uint32_t height;
         uint32_t depth;
@@ -550,6 +568,7 @@ namespace Sammi
         uint32_t heapIndex;
     };
 
+    // 物理设备特性 (功能支持情况)
     struct RHIPhysicalDeviceFeatures
     {
         RHIBool32 robustBufferAccess;
@@ -609,6 +628,7 @@ namespace Sammi
         RHIBool32 inheritedQueries;
     };
 
+    // 物理设备限制 (硬件能力上限)
     struct RHIPhysicalDeviceLimits
     {
         uint32_t maxImageDimension1D;

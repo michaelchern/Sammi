@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/interface/rhi.h"
 
@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     class VulkanUtil
     {
@@ -112,4 +112,4 @@ namespace Piccolo
         static VkSampler                               m_nearest_sampler;
         static VkSampler                               m_linear_sampler;
     };
-} // namespace Piccolo
+}

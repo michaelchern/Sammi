@@ -1,4 +1,4 @@
-#include "runtime/function/render/passes/fxaa_pass.h"
+﻿#include "runtime/function/render/passes/fxaa_pass.h"
 
 #include "runtime/function/render/render_common.h"
 #include "runtime/function/render/render_mesh.h"
@@ -13,7 +13,7 @@
 
 #include <stdexcept>
 
-namespace Piccolo
+namespace Sammi
 {
     void FXAAPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -269,4 +269,4 @@ namespace Piccolo
         m_rhi->popEvent(m_rhi->getCurrentCommandBuffer());
     }
 
-} // namespace Piccolo
+}

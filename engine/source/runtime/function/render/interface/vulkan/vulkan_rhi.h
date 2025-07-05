@@ -217,8 +217,8 @@ namespace Sammi
         void getPhysicalDeviceProperties(RHIPhysicalDeviceProperties* pProperties) override;
         RHICommandBuffer* getCurrentCommandBuffer() const override;
         RHICommandBuffer* const* getCommandBufferList() const override;
-        RHICommandPool* getCommandPoor() const override;
-        RHIDescriptorPool* getDescriptorPoor()const override;
+        RHICommandPool* getCommandPool() const override;
+        RHIDescriptorPool* getDescriptorPool()const override;
         RHIFence* const* getFenceList() const override;
         QueueFamilyIndices getQueueFamilyIndices() const override;
         RHIQueue* getGraphicsQueue() const override;
@@ -390,14 +390,14 @@ namespace Sammi
         std::vector<const char*> getRequiredExtensions();
         void                     populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
+
+
         VkDebugUtilsMessengerEXT m_debug_messenger = nullptr;
-        VkResult                 createDebugUtilsMessengerEXT(VkInstance                                instance,
-                                                              const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                              const VkAllocationCallbacks*              pAllocator,
-                                                              VkDebugUtilsMessengerEXT*                 pDebugMessenger);
-        void                     destroyDebugUtilsMessengerEXT(VkInstance                   instance,
-                                                               VkDebugUtilsMessengerEXT     debugMessenger,
-                                                               const VkAllocationCallbacks* pAllocator);
+        VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+        void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+
+
+
 
         QueueFamilyIndices      findQueueFamilies(VkPhysicalDevice physical_device);
         bool                    checkDeviceExtensionSupport(VkPhysicalDevice physical_device);

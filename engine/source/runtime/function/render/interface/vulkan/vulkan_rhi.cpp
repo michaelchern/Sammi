@@ -1,73 +1,82 @@
-﻿#include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
+﻿// 引入 Vulkan 渲染后端实现和工具类
+#include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
 #include "runtime/function/render/interface/vulkan/vulkan_util.h"
 
+// 引入窗口系统抽象层
 #include "runtime/function/render/window_system.h"
+// 引入引擎基础宏定义
 #include "runtime/core/base/macro.h"
 
+// 标准库头文件
 #include <algorithm>
 #include <cmath>
 
-// https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
+// 宏定义：将宏参数转换为字符串（两层转换确保正确展开）
+// SAMMI_STR直接字符串化，SAMMI_XSTR用于处理宏的间接展开
+// 示例：若定义#define VERSION 1，则SAMMI_XSTR(VERSION) -> "1"
 #define SAMMI_XSTR(s) SAMMI_STR(s)
 #define SAMMI_STR(s) #s
 
-#if defined(__GNUC__)
-// https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
-#if defined(__linux__)
-#include <stdlib.h>
-#elif defined(__MACH__)
-// https://developer.apple.com/library/archive/documentation/Porting/Conceptual/PortingUnix/compiling/compiling.html
-#include <stdlib.h>
+// 编译器平台检测
+#if defined(__GNUC__)        // GCC或Clang编译器
+    #if defined(__linux__)   // Linux平台
+        #include <stdlib.h>  // 标准库头文件
+    #elif defined(__MACH__)  // macOS平台（Darwin内核）
+        #include <stdlib.h>  // 标准库头文件
+    #else
+        #error Unknown Platform
+    #endif
+#elif defined(_MSC_VER)  // MSVC编译器（Windows平台）
+    // 引用Windows SDK版本头文件
+    #include <sdkddkver.h>
+
+    // 精简Windows头文件：禁用不需要的API定义以加快编译速度
+    #define WIN32_LEAN_AND_MEAN 1  // 排除不常用API
+    // 以下宏禁用特定的Windows功能组
+    #define NOGDICAPMASKS 1        // 禁用GDI功能
+    #define NOVIRTUALKEYCODES 1    // 禁用虚拟键码
+    #define NOWINMESSAGES 1        // 禁用窗口消息
+    #define NOWINSTYLES 1
+    #define NOSYSMETRICS 1
+    #define NOMENUS 1
+    #define NOICONS 1
+    #define NOKEYSTATES 1
+    #define NOSYSCOMMANDS 1
+    #define NORASTEROPS 1
+    #define NOSHOWWINDOW 1
+    #define NOATOM 1
+    #define NOCLIPBOARD 1
+    #define NOCOLOR 1
+    #define NOCTLMGR 1
+    #define NODRAWTEXT 1
+    #define NOGDI 1
+    #define NOKERNEL 1
+    #define NOUSER 1
+    #define NONLS 1
+    #define NOMB 1
+    #define NOMEMMGR 1
+    #define NOMETAFILE 1
+    #define NOMINMAX 1
+    #define NOMSG 1
+    #define NOOPENFILE 1
+    #define NOSCROLL 1
+    #define NOSERVICE 1
+    #define NOSOUND 1
+    #define NOTEXTMETRIC 1
+    #define NOWH 1
+    #define NOWINOFFSETS 1
+    #define NOCOMM 1
+    #define NOKANJI 1
+    #define NOHELP 1
+    #define NOPROFILER 1
+    #define NODEFERWINDOWPOS 1
+    #define NOMCX 1
+    #include <Windows.h>  // Windows主头文件
 #else
-#error Unknown Platform
-#endif
-#elif defined(_MSC_VER)
-// https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
-#include <sdkddkver.h>
-#define WIN32_LEAN_AND_MEAN 1
-#define NOGDICAPMASKS 1
-#define NOVIRTUALKEYCODES 1
-#define NOWINMESSAGES 1
-#define NOWINSTYLES 1
-#define NOSYSMETRICS 1
-#define NOMENUS 1
-#define NOICONS 1
-#define NOKEYSTATES 1
-#define NOSYSCOMMANDS 1
-#define NORASTEROPS 1
-#define NOSHOWWINDOW 1
-#define NOATOM 1
-#define NOCLIPBOARD 1
-#define NOCOLOR 1
-#define NOCTLMGR 1
-#define NODRAWTEXT 1
-#define NOGDI 1
-#define NOKERNEL 1
-#define NOUSER 1
-#define NONLS 1
-#define NOMB 1
-#define NOMEMMGR 1
-#define NOMETAFILE 1
-#define NOMINMAX 1
-#define NOMSG 1
-#define NOOPENFILE 1
-#define NOSCROLL 1
-#define NOSERVICE 1
-#define NOSOUND 1
-#define NOTEXTMETRIC 1
-#define NOWH 1
-#define NOWINOFFSETS 1
-#define NOCOMM 1
-#define NOKANJI 1
-#define NOHELP 1
-#define NOPROFILER 1
-#define NODEFERWINDOWPOS 1
-#define NOMCX 1
-#include <Windows.h>
-#else
-#error Unknown Compiler
+    #error Unknown Compiler
 #endif
 
+// 额外需要的标准库头文件
 #include <cstring>
 #include <iostream>
 #include <set>
@@ -78,80 +87,77 @@ namespace Sammi
 {
     VulkanRHI::~VulkanRHI()
     {
-        // TODO
     }
 
     void VulkanRHI::initialize(RHIInitInfo init_info)
     {
+        // 从窗口系统获取窗口句柄和尺寸
         m_window = init_info.window_system->getWindow();
-
         std::array<int, 2> window_size = init_info.window_system->getWindowSize();
 
+        // 初始化视口(viewport)和裁剪区域(scissor)为整个窗口大小
         m_viewport = {0.0f, 0.0f, (float)window_size[0], (float)window_size[1], 0.0f, 1.0f};
         m_scissor  = {{0, 0}, {(uint32_t)window_size[0], (uint32_t)window_size[1]}};
 
-#ifndef NDEBUG
+        // 调试模式设置：DEBUG 下启用验证层和调试标签，RELEASE 下禁用
+        #ifndef NDEBUG
         m_enable_validation_Layers = true;
         m_enable_debug_utils_label = true;
-#else
+        #else
         m_enable_validation_Layers  = false;
         m_enable_debug_utils_label  = false;
-#endif
+        #endif
 
-#if defined(__GNUC__) && defined(__MACH__)
+        // 平台特定功能开关：在 MacOS 上禁用点光源阴影（可能驱动不完善）
+        #if defined(__GNUC__) && defined(__MACH__)
         m_enable_point_light_shadow = false;
-#else
+        #else
         m_enable_point_light_shadow = true;
-#endif
+        #endif
 
-#if defined(__GNUC__)
-        // https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
-#if defined(__linux__)
-        char const* vk_layer_path = SAMMI_XSTR(SAMMI_VK_LAYER_PATH);
-        setenv("VK_LAYER_PATH", vk_layer_path, 1);
-#elif defined(__MACH__)
-        // https://developer.apple.com/library/archive/documentation/Porting/Conceptual/PortingUnix/compiling/compiling.html
-        char const* vk_layer_path    = SAMMI_XSTR(SAMMI_VK_LAYER_PATH);
-        char const* vk_icd_filenames = SAMMI_XSTR(SAMMI_VK_ICD_FILENAMES);
-        setenv("VK_LAYER_PATH", vk_layer_path, 1);
-        setenv("VK_ICD_FILENAMES", vk_icd_filenames, 1);
-#else
-#error Unknown Platform
-#endif
-#elif defined(_MSC_VER)
-        // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
-        char const* vk_layer_path = SAMMI_XSTR(SAMMI_VK_LAYER_PATH);
-        SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
-        SetEnvironmentVariableA("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");
-#else
-#error Unknown Compiler
-#endif
+#pragma region 跨平台 Vulkan 环境变量设置
 
-        createInstance();
+        #if defined(__GNUC__)       // GCC/Clang 系列编译器
+            #if defined(__linux__)  // Linux 平台
+                char const* vk_layer_path = SAMMI_XSTR(SAMMI_VK_LAYER_PATH);
+                setenv("VK_LAYER_PATH", vk_layer_path, 1);  // 设置验证层搜索路径
 
-        initializeDebugMessenger();
+            #elif defined(__MACH__)  // macOS 平台
+                char const* vk_layer_path    = SAMMI_XSTR(SAMMI_VK_LAYER_PATH);
+                char const* vk_icd_filenames = SAMMI_XSTR(SAMMI_VK_ICD_FILENAMES);
+                setenv("VK_LAYER_PATH", vk_layer_path, 1);        // 设置验证层路径
+                setenv("VK_ICD_FILENAMES", vk_icd_filenames, 1);  // 设置驱动文件路径
+            #else
+                #error Unknown Platform
+            #endif
 
-        createWindowSurface();
+        #elif defined(_MSC_VER)  // MSVC 编译器 (Windows)
+            char const* vk_layer_path = SAMMI_XSTR(SAMMI_VK_LAYER_PATH);
+            SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);  // 设置验证层路径
+            SetEnvironmentVariableA("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");  // 禁用AMD问题层
+        #else
+            #error Unknown Compiler
+        #endif
 
-        initializePhysicalDevice();
+#pragma endregion
 
-        createLogicalDevice();
+        #pragma region Vulkan 初始化流程(严格按顺序执行)
 
-        createCommandPool();
+        createInstance();                 // 创建 Vulkan 实例
+        initializeDebugMessenger();       // 初始化调试回调
+        createWindowSurface();            // 创建窗口表面
+        initializePhysicalDevice();       // 选择物理设备 (GPU)
+        createLogicalDevice();            // 创建设备和队列
+        createCommandPool();              // 创建命令池
+        createCommandBuffers();           // 分配主命令缓冲区
+        createDescriptorPool();           // 创建描述符池
+        createSyncPrimitives();           // 创建同步对象（信号量/栅栏）
+        createSwapchain();                // 创建交换链
+        createSwapchainImageViews();      // 创建交换链图像视图
+        createFramebufferImageAndView();  // 创建帧缓冲区附件
+        createAssetAllocator();           // 初始化内存分配器
 
-        createCommandBuffers();
-
-        createDescriptorPool();
-
-        createSyncPrimitives();
-
-        createSwapchain();
-
-        createSwapchainImageViews();
-
-        createFramebufferImageAndView();
-
-        createAssetAllocator();
+        #pragma endregion
     }
 
     void VulkanRHI::prepareContext()
@@ -548,14 +554,106 @@ namespace Sammi
     }
 
     // validation layers
+    
+
+    
+
+    // debug callback
+    
+
+    
+
+    #pragma region 1-Instance
+
+    void VulkanRHI::createInstance()
+    {
+        // 检查验证层支持（如果启用）
+        if (m_enable_validation_Layers && !checkValidationLayerSupport())
+        {
+            LOG_ERROR("Error: validation layer is not supported!");
+        }
+
+        m_vulkan_api_version = VK_API_VERSION_1_0;
+
+        // 设置应用程序信息
+        VkApplicationInfo appInfo{};
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.pApplicationName = "Sammi_renderer";          // 应用程序名称
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);  // 应用版本
+        appInfo.pEngineName = "Sammi";                   // 引擎名称
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);  // 引擎版本
+        appInfo.apiVersion = m_vulkan_api_version;      // Vulkan API 版本
+
+        // 设置实例创建信息
+        VkInstanceCreateInfo instance_create_info{};
+        instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        instance_create_info.pApplicationInfo = &appInfo;
+
+        // 获取并设置必需扩展
+        auto extensions = getRequiredExtensions();
+        instance_create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        instance_create_info.ppEnabledExtensionNames = extensions.data();
+
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+        if (m_enable_validation_Layers)
+        {
+            instance_create_info.enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size());
+            instance_create_info.ppEnabledLayerNames = m_validation_layers.data();
+
+            populateDebugMessengerCreateInfo(debugCreateInfo);
+            instance_create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        }
+        else
+        {
+            instance_create_info.enabledLayerCount = 0;
+            instance_create_info.pNext = nullptr;
+        }
+
+        // 创建 Vulkan 实例
+        if (vkCreateInstance(&instance_create_info, nullptr, &m_instance) != VK_SUCCESS)
+        {
+            LOG_ERROR("Failed to create instance!");
+        }
+    }
+
+    // 获取应用程序必需的扩展列表
+    std::vector<const char*> VulkanRHI::getRequiredExtensions()
+    {
+        uint32_t     glfwExtensionCount = 0;
+        const char** glfwExtensions;
+
+        // 1. 从 GLFW 获取窗口系统必需的扩展
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        // 2. 复制 GLFW 返回的扩展
+        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+        // 3. 添加调试工具扩展（如果启用验证层）
+        if (m_enable_validation_Layers || m_enable_debug_utils_label)
+        {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+        #if defined(__MACH__)
+            extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        #endif
+
+        return extensions;
+    }
+
+    // 检查系统是否支持请求的验证层
     bool VulkanRHI::checkValidationLayerSupport()
     {
         uint32_t layerCount;
+
+        // 1. 获取可用验证层数量
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
+        // 2. 获取所有可用验证层
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
+        // 3. 检查每个请求的验证层是否可用
         for (const char* layerName : m_validation_layers)
         {
             bool layerFound = false;
@@ -578,96 +676,33 @@ namespace Sammi
         return RHI_SUCCESS;
     }
 
-    std::vector<const char*> VulkanRHI::getRequiredExtensions()
-    {
-        uint32_t     glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-        if (m_enable_validation_Layers || m_enable_debug_utils_label)
-        {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-
-#if defined(__MACH__)
-        extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-#endif
-
-        return extensions;
-    }
-
-    // debug callback
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT,
-                                                        VkDebugUtilsMessageTypeFlagsEXT,
-                                                        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                        void*)
-    {
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-        return VK_FALSE;
-    }
-
     void VulkanRHI::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
     {
-        createInfo       = {};
+        createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType =
-            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+        // 设置要接收的消息严重级别
+        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |  // 警告
+                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;     // 错误
+
+        // 设置要接收的消息类型
+        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |  // 违反规范/最佳实践
+                                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;  // 性能问题
+
+        // 设置回调函数
         createInfo.pfnUserCallback = debugCallback;
     }
 
-    void VulkanRHI::createInstance()
+    // 调试回调函数 - 处理 Vulkan 验证层输出的消息
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,  // 消息严重级别
+                                                        VkDebugUtilsMessageTypeFlagsEXT messageType,             // 消息类型
+                                                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,     // 消息数据
+                                                        void* pUserData)                                         // 用户自定义数据
     {
-        // 检查验证层支持（如果启用）
-        if (m_enable_validation_Layers && !checkValidationLayerSupport())
-        {
-            LOG_ERROR("validation layers requested, but not available!");
-        }
-
-        m_vulkan_api_version = VK_API_VERSION_1_0;
-
-        // 设置应用程序信息
-        VkApplicationInfo appInfo {};
-        appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName   = "Sammi_renderer";          // 应用程序名称
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);  // 应用版本
-        appInfo.pEngineName        = "Sammi";                   // 引擎名称
-        appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);  // 引擎版本
-        appInfo.apiVersion         = m_vulkan_api_version;      // Vulkan API 版本
-
-        // 设置实例创建信息
-        VkInstanceCreateInfo instance_create_info {};
-        instance_create_info.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        instance_create_info.pApplicationInfo = &appInfo; 
-
-        // 获取并设置必需扩展
-        auto extensions                              = getRequiredExtensions();
-        instance_create_info.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
-        instance_create_info.ppEnabledExtensionNames = extensions.data();
-
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo {};
-        if (m_enable_validation_Layers)
-        {
-            instance_create_info.enabledLayerCount   = static_cast<uint32_t>(m_validation_layers.size());
-            instance_create_info.ppEnabledLayerNames = m_validation_layers.data();
-
-            populateDebugMessengerCreateInfo(debugCreateInfo);
-            instance_create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-        }
-        else
-        {
-            instance_create_info.enabledLayerCount = 0;
-            instance_create_info.pNext             = nullptr;
-        }
-
-        // 创建 Vulkan 实例
-        if (vkCreateInstance(&instance_create_info, nullptr, &m_instance) != VK_SUCCESS)
-        {
-            LOG_ERROR("Failed to create instance!");
-        }
+        // 简单打印验证层消息到控制台
+        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        // 返回 VK_FALSE 表示不中止 Vulkan 调用
+        return VK_FALSE;
     }
 
     void VulkanRHI::initializeDebugMessenger()
@@ -684,24 +719,51 @@ namespace Sammi
 
         if (m_enable_debug_utils_label)
         {
-            _vkCmdBeginDebugUtilsLabelEXT =
-                (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(m_instance, "vkCmdBeginDebugUtilsLabelEXT");
-            _vkCmdEndDebugUtilsLabelEXT =
-                (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(m_instance, "vkCmdEndDebugUtilsLabelEXT");
+            _vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(m_instance, "vkCmdBeginDebugUtilsLabelEXT");
+            _vkCmdEndDebugUtilsLabelEXT   = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(m_instance, "vkCmdEndDebugUtilsLabelEXT");
         }
     }
 
-    void VulkanRHI::createWindowSurface()
+    // 创建调试信使的扩展函数封装（因为这是扩展功能）
+    VkResult VulkanRHI::createDebugUtilsMessengerEXT(VkInstance instance,
+                                               const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,  // 创建信息
+                                               const VkAllocationCallbacks* pAllocator,                // 内存分配器
+                                                     VkDebugUtilsMessengerEXT* pDebugMessenger)        // 输出调试信使句柄
     {
-        if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        if (func != nullptr)
         {
-            LOG_ERROR("glfwCreateWindowSurface failed!");
+            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        }
+        else
+        {
+            // 扩展不可用
+            return VK_ERROR_EXTENSION_NOT_PRESENT;
         }
     }
+
+    // 销毁调试信使的扩展函数封装
+    void VulkanRHI::destroyDebugUtilsMessengerEXT(VkInstance instance,
+                                                  VkDebugUtilsMessengerEXT debugMessenger,  // 要销毁的调试信使
+                                            const VkAllocationCallbacks* pAllocator)        // 内存分配器
+    {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr)
+        {
+            func(instance, debugMessenger, pAllocator);
+        }
+    }
+
+    #pragma endregion
+
+    #pragma region 2-Device
 
     void VulkanRHI::initializePhysicalDevice()
     {
+        // 物理设备数量
         uint32_t physical_device_count;
+
+        // 获取可用物理设备数量
         vkEnumeratePhysicalDevices(m_instance, &physical_device_count, nullptr);
         if (physical_device_count == 0)
         {
@@ -709,50 +771,207 @@ namespace Sammi
         }
         else
         {
-            // find one device that matches our requirement
-            // or find which is the best
+            // 获取所有物理设备句柄
             std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
             vkEnumeratePhysicalDevices(m_instance, &physical_device_count, physical_devices.data());
 
+            // 创建评分-设备对的向量，用于设备排序选择
             std::vector<std::pair<int, VkPhysicalDevice>> ranked_physical_devices;
+
+            // 遍历所有可用物理设备
             for (const auto& device : physical_devices)
             {
+                // 获取设备属性（名称、类型、驱动版本等）
                 VkPhysicalDeviceProperties physical_device_properties;
                 vkGetPhysicalDeviceProperties(device, &physical_device_properties);
                 int score = 0;
 
+                // 按设备类型评分：优先选择独立显卡
                 if (physical_device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
                 {
-                    score += 1000;
+                    score += 1000;  // 独立显卡获得最高分
                 }
                 else if (physical_device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
                 {
-                    score += 100;
+                    score += 100;  // 集成显卡获得中等分数
                 }
+                // 其他类型设备（如虚拟GPU、CPU等）不计分
 
-                ranked_physical_devices.push_back({score, device});
+                // 将评分和设备加入向量
+                ranked_physical_devices.push_back({ score, device });
             }
 
+            // 对设备按评分降序排序（最高分在前）
             std::sort(ranked_physical_devices.begin(),
                       ranked_physical_devices.end(),
-                      [](const std::pair<int, VkPhysicalDevice>& p1, const std::pair<int, VkPhysicalDevice>& p2) {
-                          return p1 > p2;
-                      });
+                      [](const std::pair<int, VkPhysicalDevice>& p1, const std::pair<int, VkPhysicalDevice>& p2)
+                      { return p1 > p2; });  // 降序排序：分数大的排前面
 
+            // 从高到低遍历排序后的设备
             for (const auto& device : ranked_physical_devices)
             {
+                // 检查设备是否满足要求（扩展支持、队列族等）
                 if (isDeviceSuitable(device.second))
                 {
-                    m_physical_device = device.second;
+                    m_physical_device = device.second;  // 选择第一个满足条件的设备
                     break;
                 }
             }
 
+            // 检查是否成功选到合适设备
             if (m_physical_device == VK_NULL_HANDLE)
             {
-                LOG_ERROR("failed to find suitable physical device");
+                LOG_ERROR("failed to find suitable physical device!");
             }
         }
+    }
+
+    // 检查物理设备是否满足应用需求
+    bool VulkanRHI::isDeviceSuitable(VkPhysicalDevice physicalm_device)
+    {
+        // 1. 检查设备支持的队列族（Queue Families）
+        // 主要需要图形队列和呈现队列
+        auto queue_indices = findQueueFamilies(physicalm_device);
+
+        // 2. 检查设备是否支持必要的扩展
+        // 主要是交换链扩展 VK_KHR_swapchain
+        bool is_extensions_supported = checkDeviceExtensionSupport(physicalm_device);
+
+        // 3. 检查交换链支持是否充分
+        bool is_swapchain_adequate = false;
+        if (is_extensions_supported)  // 只有在支持扩展的情况下才检查交换链细节
+        {
+            // 查询交换链支持的详细信息
+            SwapChainSupportDetails swapchain_support_details = querySwapChainSupport(physicalm_device);
+            // 交换链支持充分的条件：至少有一种图像格式和一种呈现模式
+            is_swapchain_adequate = !swapchain_support_details.formats.empty() &&
+                                    !swapchain_support_details.presentModes.empty();
+        }
+
+        // 4. 获取设备支持的特性（Features）
+        VkPhysicalDeviceFeatures physicalm_device_features;
+        vkGetPhysicalDeviceFeatures(physicalm_device, &physicalm_device_features);
+
+        // 5. 综合判断设备是否合适
+        // 必须满足的条件：
+        //   - 队列族完整（找到图形和呈现队列）
+        //   - 交换链支持充分
+        //   - 支持各向异性过滤（纹理过滤的重要特性）
+        if (!queue_indices.isComplete() || !is_swapchain_adequate || !physicalm_device_features.samplerAnisotropy)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    // 查找物理设备支持的队列族（针对设备和表面）
+    Sammi::QueueFamilyIndices VulkanRHI::findQueueFamilies(VkPhysicalDevice physicalm_device)
+    {
+        QueueFamilyIndices indices;  // 存储找到的队列族索引
+
+        // 1. 获取队列族数量
+        uint32_t queue_family_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalm_device, &queue_family_count, nullptr);
+
+        // 2. 获取所有队列族属性
+        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalm_device, &queue_family_count, queue_families.data());
+
+        // 3. 遍历所有队列族
+        int i = 0;
+        for (const auto& queue_family : queue_families)
+        {
+            // 3.1 检查是否支持图形队列
+            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.graphics_family = i;  // 记录图形队列族索引
+            }
+
+            // 3.2 检查是否支持计算队列（可选但推荐）
+            if (queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            {
+                indices.m_compute_family = i;  // 记录计算队列族索引
+            }
+
+            // 3.3 检查是否支持呈现（显示到表面）
+            VkBool32 is_present_support = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(physicalm_device,
+                                                 i,                     // 当前队列族索引
+                                                 m_surface,             // 之前创建的窗口表面
+                                                 &is_present_support);  
+            if (is_present_support)
+            {
+                indices.present_family = i;  // 记录呈现队列族索引
+            }
+
+            // 3.4 如果已找到所有必需队列，提前结束搜索
+            if (indices.isComplete())
+            {
+                break;  // 优化：避免不必要的迭代
+            }
+            i++;  // 移动到下一个队列族
+        }
+        return indices;  // 返回找到的队列族索引集合
+    }
+
+    // 检查物理设备是否支持所需的设备扩展
+    bool VulkanRHI::checkDeviceExtensionSupport(VkPhysicalDevice physicalm_device)
+    {
+        // 1. 获取设备支持的扩展数量
+        uint32_t extension_count;
+        vkEnumerateDeviceExtensionProperties(physicalm_device,  // 物理设备句柄
+                                             nullptr,           // 特定扩展层（设为nullptr获取所有扩展）
+                                             &extension_count,  // 接收扩展数量
+                                             nullptr);          // 不需要实际数据
+
+        // 2. 获取设备支持的所有扩展详细信息
+        std::vector<VkExtensionProperties> available_extensions(extension_count);
+        vkEnumerateDeviceExtensionProperties(physicalm_device, nullptr, &extension_count, available_extensions.data());
+
+        // 3. 创建需要检查的扩展名称集合
+        // m_device_extensions 是预定义的必需扩展列表（如交换链扩展）
+        std::set<std::string> required_extensions(m_device_extensions.begin(), m_device_extensions.end());
+
+        // 4. 遍历设备支持的所有扩展
+        for (const auto& extension : available_extensions)
+        {
+            // 从必需集合中移除找到的扩展
+            required_extensions.erase(extension.extensionName);
+        }
+
+        // 5. 如果必需集合为空，说明所有扩展都支持
+        return required_extensions.empty();
+    }
+
+    Sammi::SwapChainSupportDetails VulkanRHI::querySwapChainSupport(VkPhysicalDevice physicalm_device)
+    {
+        SwapChainSupportDetails details_result;
+
+        // capabilities
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalm_device, m_surface, &details_result.capabilities);
+
+        // formats
+        uint32_t format_count;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalm_device, m_surface, &format_count, nullptr);
+        if (format_count != 0)
+        {
+            details_result.formats.resize(format_count);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(
+                physicalm_device, m_surface, &format_count, details_result.formats.data());
+        }
+
+        // present modes
+        uint32_t presentmode_count;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalm_device, m_surface, &presentmode_count, nullptr);
+        if (presentmode_count != 0)
+        {
+            details_result.presentModes.resize(presentmode_count);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(
+                physicalm_device, m_surface, &presentmode_count, details_result.presentModes.data());
+        }
+
+        return details_result;
     }
 
     // logical device (m_vulkan_context._device : graphic queue, present queue,
@@ -762,18 +981,18 @@ namespace Sammi
         m_queue_indices = findQueueFamilies(m_physical_device);
 
         std::vector<VkDeviceQueueCreateInfo> queue_create_infos; // all queues that need to be created
-        std::set<uint32_t>                   queue_families = {m_queue_indices.graphics_family.value(),
+        std::set<uint32_t>                   queue_families = { m_queue_indices.graphics_family.value(),
                                              m_queue_indices.present_family.value(),
-                                             m_queue_indices.m_compute_family.value()};
+                                             m_queue_indices.m_compute_family.value() };
 
         float queue_priority = 1.0f;
         for (uint32_t queue_family : queue_families) // for every queue family
         {
             // queue create info
-            VkDeviceQueueCreateInfo queue_create_info {};
-            queue_create_info.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            VkDeviceQueueCreateInfo queue_create_info{};
+            queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queue_create_info.queueFamilyIndex = queue_family;
-            queue_create_info.queueCount       = 1;
+            queue_create_info.queueCount = 1;
             queue_create_info.pQueuePriorities = &queue_priority;
             queue_create_infos.push_back(queue_create_info);
         }
@@ -796,14 +1015,14 @@ namespace Sammi
         }
 
         // device create info
-        VkDeviceCreateInfo device_create_info {};
-        device_create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        device_create_info.pQueueCreateInfos       = queue_create_infos.data();
-        device_create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
-        device_create_info.pEnabledFeatures        = &physical_device_features;
-        device_create_info.enabledExtensionCount   = static_cast<uint32_t>(m_device_extensions.size());
+        VkDeviceCreateInfo device_create_info{};
+        device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        device_create_info.pQueueCreateInfos = queue_create_infos.data();
+        device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
+        device_create_info.pEnabledFeatures = &physical_device_features;
+        device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extensions.size());
         device_create_info.ppEnabledExtensionNames = m_device_extensions.data();
-        device_create_info.enabledLayerCount       = 0;
+        device_create_info.enabledLayerCount = 0;
 
         if (vkCreateDevice(m_physical_device, &device_create_info, nullptr, &m_device) != VK_SUCCESS)
         {
@@ -824,25 +1043,45 @@ namespace Sammi
         ((VulkanQueue*)m_compute_queue)->setResource(vk_compute_queue);
 
         // more efficient pointer
-        _vkResetCommandPool      = (PFN_vkResetCommandPool)vkGetDeviceProcAddr(m_device, "vkResetCommandPool");
-        _vkBeginCommandBuffer    = (PFN_vkBeginCommandBuffer)vkGetDeviceProcAddr(m_device, "vkBeginCommandBuffer");
-        _vkEndCommandBuffer      = (PFN_vkEndCommandBuffer)vkGetDeviceProcAddr(m_device, "vkEndCommandBuffer");
-        _vkCmdBeginRenderPass    = (PFN_vkCmdBeginRenderPass)vkGetDeviceProcAddr(m_device, "vkCmdBeginRenderPass");
-        _vkCmdNextSubpass        = (PFN_vkCmdNextSubpass)vkGetDeviceProcAddr(m_device, "vkCmdNextSubpass");
-        _vkCmdEndRenderPass      = (PFN_vkCmdEndRenderPass)vkGetDeviceProcAddr(m_device, "vkCmdEndRenderPass");
-        _vkCmdBindPipeline       = (PFN_vkCmdBindPipeline)vkGetDeviceProcAddr(m_device, "vkCmdBindPipeline");
-        _vkCmdSetViewport        = (PFN_vkCmdSetViewport)vkGetDeviceProcAddr(m_device, "vkCmdSetViewport");
-        _vkCmdSetScissor         = (PFN_vkCmdSetScissor)vkGetDeviceProcAddr(m_device, "vkCmdSetScissor");
-        _vkWaitForFences         = (PFN_vkWaitForFences)vkGetDeviceProcAddr(m_device, "vkWaitForFences");
-        _vkResetFences           = (PFN_vkResetFences)vkGetDeviceProcAddr(m_device, "vkResetFences");
-        _vkCmdDrawIndexed        = (PFN_vkCmdDrawIndexed)vkGetDeviceProcAddr(m_device, "vkCmdDrawIndexed");
-        _vkCmdBindVertexBuffers  = (PFN_vkCmdBindVertexBuffers)vkGetDeviceProcAddr(m_device, "vkCmdBindVertexBuffers");
-        _vkCmdBindIndexBuffer    = (PFN_vkCmdBindIndexBuffer)vkGetDeviceProcAddr(m_device, "vkCmdBindIndexBuffer");
+        _vkResetCommandPool = (PFN_vkResetCommandPool)vkGetDeviceProcAddr(m_device, "vkResetCommandPool");
+        _vkBeginCommandBuffer = (PFN_vkBeginCommandBuffer)vkGetDeviceProcAddr(m_device, "vkBeginCommandBuffer");
+        _vkEndCommandBuffer = (PFN_vkEndCommandBuffer)vkGetDeviceProcAddr(m_device, "vkEndCommandBuffer");
+        _vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetDeviceProcAddr(m_device, "vkCmdBeginRenderPass");
+        _vkCmdNextSubpass = (PFN_vkCmdNextSubpass)vkGetDeviceProcAddr(m_device, "vkCmdNextSubpass");
+        _vkCmdEndRenderPass = (PFN_vkCmdEndRenderPass)vkGetDeviceProcAddr(m_device, "vkCmdEndRenderPass");
+        _vkCmdBindPipeline = (PFN_vkCmdBindPipeline)vkGetDeviceProcAddr(m_device, "vkCmdBindPipeline");
+        _vkCmdSetViewport = (PFN_vkCmdSetViewport)vkGetDeviceProcAddr(m_device, "vkCmdSetViewport");
+        _vkCmdSetScissor = (PFN_vkCmdSetScissor)vkGetDeviceProcAddr(m_device, "vkCmdSetScissor");
+        _vkWaitForFences = (PFN_vkWaitForFences)vkGetDeviceProcAddr(m_device, "vkWaitForFences");
+        _vkResetFences = (PFN_vkResetFences)vkGetDeviceProcAddr(m_device, "vkResetFences");
+        _vkCmdDrawIndexed = (PFN_vkCmdDrawIndexed)vkGetDeviceProcAddr(m_device, "vkCmdDrawIndexed");
+        _vkCmdBindVertexBuffers = (PFN_vkCmdBindVertexBuffers)vkGetDeviceProcAddr(m_device, "vkCmdBindVertexBuffers");
+        _vkCmdBindIndexBuffer = (PFN_vkCmdBindIndexBuffer)vkGetDeviceProcAddr(m_device, "vkCmdBindIndexBuffer");
         _vkCmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets)vkGetDeviceProcAddr(m_device, "vkCmdBindDescriptorSets");
-        _vkCmdClearAttachments   = (PFN_vkCmdClearAttachments)vkGetDeviceProcAddr(m_device, "vkCmdClearAttachments");
+        _vkCmdClearAttachments = (PFN_vkCmdClearAttachments)vkGetDeviceProcAddr(m_device, "vkCmdClearAttachments");
 
         m_depth_image_format = (RHIFormat)findDepthFormat();
     }
+
+
+
+    #pragma endregion
+
+    
+
+    
+
+    void VulkanRHI::createWindowSurface()
+    {
+        if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS)
+        {
+            LOG_ERROR("glfwCreateWindowSurface failed!");
+        }
+    }
+
+    
+
+    
 
     void VulkanRHI::createCommandPool()
     {
@@ -2717,7 +2956,7 @@ namespace Sammi
     {
         switch (type)
         {
-        case Piccolo::Default_Sampler_Linear:
+        case Sammi::Default_Sampler_Linear:
             if (m_linear_sampler == nullptr)
             {
                 m_linear_sampler = new VulkanSampler();
@@ -2726,7 +2965,7 @@ namespace Sammi
             return m_linear_sampler;
             break;
 
-        case Piccolo::Default_Sampler_Nearest:
+        case Sammi::Default_Sampler_Nearest:
             if (m_nearest_sampler == nullptr)
             {
                 m_nearest_sampler = new VulkanSampler();
@@ -3127,11 +3366,11 @@ namespace Sammi
     {
         switch (type)
         {
-        case Piccolo::Default_Sampler_Linear:
+        case Sammi::Default_Sampler_Linear:
             VulkanUtil::destroyLinearSampler(m_device);
             delete(m_linear_sampler);
             break;
-        case Piccolo::Default_Sampler_Nearest:
+        case Sammi::Default_Sampler_Nearest:
             VulkanUtil::destroyNearestSampler(m_device);
             delete(m_nearest_sampler);
             break;
@@ -3300,145 +3539,15 @@ namespace Sammi
         createFramebufferImageAndView();
     }
 
-    VkResult VulkanRHI::createDebugUtilsMessengerEXT(VkInstance                                instance,
-                                                     const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                     const VkAllocationCallbacks*              pAllocator,
-                                                     VkDebugUtilsMessengerEXT*                 pDebugMessenger)
-    {
-        auto func =
-            (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr)
-        {
-            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-        }
-        else
-        {
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-    }
+    
 
-    void VulkanRHI::destroyDebugUtilsMessengerEXT(VkInstance                   instance,
-                                                  VkDebugUtilsMessengerEXT     debugMessenger,
-                                                  const VkAllocationCallbacks* pAllocator)
-    {
-        auto func =
-            (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr)
-        {
-            func(instance, debugMessenger, pAllocator);
-        }
-    }
+    
 
-    Piccolo::QueueFamilyIndices VulkanRHI::findQueueFamilies(VkPhysicalDevice physicalm_device) // for device and surface
-    {
-        QueueFamilyIndices indices;
-        uint32_t           queue_family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalm_device, &queue_family_count, nullptr);
-        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalm_device, &queue_family_count, queue_families.data());
+    
 
-        int i = 0;
-        for (const auto& queue_family : queue_families)
-        {
-            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) // if support graphics command queue
-            {
-                indices.graphics_family = i;
-            }
+    
 
-            if (queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) // if support compute command queue
-            {
-                indices.m_compute_family = i;
-            }
-
-
-            VkBool32 is_present_support = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(physicalm_device,
-                                                 i,
-                                                 m_surface,
-                                                 &is_present_support); // if support surface presentation
-            if (is_present_support)
-            {
-                indices.present_family = i;
-            }
-
-            if (indices.isComplete())
-            {
-                break;
-            }
-            i++;
-        }
-        return indices;
-    }
-
-    bool VulkanRHI::checkDeviceExtensionSupport(VkPhysicalDevice physicalm_device)
-    {
-        uint32_t extension_count;
-        vkEnumerateDeviceExtensionProperties(physicalm_device, nullptr, &extension_count, nullptr);
-
-        std::vector<VkExtensionProperties> available_extensions(extension_count);
-        vkEnumerateDeviceExtensionProperties(physicalm_device, nullptr, &extension_count, available_extensions.data());
-
-        std::set<std::string> required_extensions(m_device_extensions.begin(), m_device_extensions.end());
-        for (const auto& extension : available_extensions)
-        {
-            required_extensions.erase(extension.extensionName);
-        }
-
-        return required_extensions.empty();
-    }
-
-    bool VulkanRHI::isDeviceSuitable(VkPhysicalDevice physicalm_device)
-    {
-        auto queue_indices           = findQueueFamilies(physicalm_device);
-        bool is_extensions_supported = checkDeviceExtensionSupport(physicalm_device);
-        bool is_swapchain_adequate   = false;
-        if (is_extensions_supported)
-        {
-            SwapChainSupportDetails swapchain_support_details = querySwapChainSupport(physicalm_device);
-            is_swapchain_adequate =
-                !swapchain_support_details.formats.empty() && !swapchain_support_details.presentModes.empty();
-        }
-
-        VkPhysicalDeviceFeatures physicalm_device_features;
-        vkGetPhysicalDeviceFeatures(physicalm_device, &physicalm_device_features);
-
-        if (!queue_indices.isComplete() || !is_swapchain_adequate || !physicalm_device_features.samplerAnisotropy)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    Piccolo::SwapChainSupportDetails VulkanRHI::querySwapChainSupport(VkPhysicalDevice physicalm_device)
-    {
-        SwapChainSupportDetails details_result;
-
-        // capabilities
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalm_device, m_surface, &details_result.capabilities);
-
-        // formats
-        uint32_t format_count;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalm_device, m_surface, &format_count, nullptr);
-        if (format_count != 0)
-        {
-            details_result.formats.resize(format_count);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(
-                physicalm_device, m_surface, &format_count, details_result.formats.data());
-        }
-
-        // present modes
-        uint32_t presentmode_count;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalm_device, m_surface, &presentmode_count, nullptr);
-        if (presentmode_count != 0)
-        {
-            details_result.presentModes.resize(presentmode_count);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(
-                physicalm_device, m_surface, &presentmode_count, details_result.presentModes.data());
-        }
-
-        return details_result;
-    }
+    
 
     VkFormat VulkanRHI::findDepthFormat()
     {

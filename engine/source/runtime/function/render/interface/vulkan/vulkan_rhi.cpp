@@ -899,7 +899,7 @@ namespace Sammi
             vkGetPhysicalDeviceSurfaceSupportKHR(physicalm_device,
                                                  i,                     // 当前队列族索引
                                                  m_surface,             // 之前创建的窗口表面
-                                                 &is_present_support);  
+                                                 &is_present_support);
             if (is_present_support)
             {
                 indices.present_family = i;  // 记录呈现队列族索引

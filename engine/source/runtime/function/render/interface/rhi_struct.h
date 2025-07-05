@@ -1143,13 +1143,25 @@ namespace Sammi
         RHIFormat        depth_image_format;
     };
 
+    // 用于存储物理设备队列族索引的结构体
     struct QueueFamilyIndices
     {
+        // 图形队列族索引：负责图形渲染命令
         std::optional<uint32_t> graphics_family;
+
+        // 呈现队列族索引：负责将图像呈现到表面
         std::optional<uint32_t> present_family;
+
+        // 计算队列族索引：负责异步计算任务（可选）
         std::optional<uint32_t> m_compute_family;
 
-        bool isComplete() { return graphics_family.has_value() && present_family.has_value() && m_compute_family.has_value();; }
+        // 检查是否所有必需的队列族都已找到
+        bool isComplete() 
+        {
+            return graphics_family.has_value() &&  // 需要图形队列
+                   present_family.has_value() &&   // 需要呈现队列
+                   m_compute_family.has_value();   // 需要计算队列
+        }
     };
 
     // 交换链支持详情 (Vulkan特定)

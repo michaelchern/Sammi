@@ -1,4 +1,4 @@
-#include "runtime/function/render/passes/directional_light_pass.h"
+﻿#include "runtime/function/render/passes/directional_light_pass.h"
 
 #include "runtime/function/render/render_helper.h"
 #include "runtime/function/render/render_mesh.h"
@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-namespace Piccolo
+namespace Sammi
 {
     void DirectionalLightShadowPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -692,4 +692,4 @@ namespace Piccolo
             m_rhi->cmdEndRenderPassPFN(m_rhi->getCurrentCommandBuffer());
         }
     }
-} // namespace Piccolo
+}

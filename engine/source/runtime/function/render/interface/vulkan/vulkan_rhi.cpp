@@ -944,9 +944,10 @@ namespace Sammi
         return required_extensions.empty();
     }
 
+    // 查询物理设备对交换链的支持细节
     Sammi::SwapChainSupportDetails VulkanRHI::querySwapChainSupport(VkPhysicalDevice physicalm_device)
     {
-        SwapChainSupportDetails details_result;
+        SwapChainSupportDetails details_result;  // 存储查询结果的结构体
 
         // capabilities
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalm_device, m_surface, &details_result.capabilities);

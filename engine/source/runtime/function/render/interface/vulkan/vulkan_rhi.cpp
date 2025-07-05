@@ -949,101 +949,122 @@ namespace Sammi
     {
         SwapChainSupportDetails details_result;  // 存储查询结果的结构体
 
-        // capabilities
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalm_device, m_surface, &details_result.capabilities);
+        // 1. 查询表面能力（Surface Capabilities）
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalm_device,               // 物理设备
+                                                  m_surface,                      // 之前创建的窗口表面
+                                                  &details_result.capabilities);  // 接收表面能力信息
 
-        // formats
+        // 2. 查询支持的表面格式（颜色空间）
         uint32_t format_count;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalm_device, m_surface, &format_count, nullptr);
+        // 获取格式数量
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalm_device,
+                                             m_surface,
+                                             &format_count,
+                                             nullptr);
+
+        // 如果有支持的格式
         if (format_count != 0)
         {
-            details_result.formats.resize(format_count);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(
-                physicalm_device, m_surface, &format_count, details_result.formats.data());
+            details_result.formats.resize(format_count);     // 调整容器大小
+            // 获取实际格式数据
+            vkGetPhysicalDeviceSurfaceFormatsKHR(physicalm_device,
+                                                 m_surface,
+                                                 &format_count,
+                                                 details_result.formats.data());
+
         }
 
-        // present modes
+        // 3. 查询支持的呈现模式
         uint32_t presentmode_count;
+        // 获取呈现模式数量
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalm_device, m_surface, &presentmode_count, nullptr);
+        // 如果有支持的呈现模式
         if (presentmode_count != 0)
         {
-            details_result.presentModes.resize(presentmode_count);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(
-                physicalm_device, m_surface, &presentmode_count, details_result.presentModes.data());
+            details_result.presentModes.resize(presentmode_count);  // 调整容器大小
+            // 获取实际呈现模式数据
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalm_device,
+                                                      m_surface,
+                                                      &presentmode_count,
+                                                      details_result.presentModes.data());
         }
 
-        return details_result;
+        return details_result;  // 返回包含所有支持细节的结构体
     }
 
-    // logical device (m_vulkan_context._device : graphic queue, present queue,
-    // feature:samplerAnisotropy)
+    // 创建逻辑设备并初始化相关资源
     void VulkanRHI::createLogicalDevice()
     {
+        // 1. 获取先前找到的队列族索引
         m_queue_indices = findQueueFamilies(m_physical_device);
 
-        std::vector<VkDeviceQueueCreateInfo> queue_create_infos; // all queues that need to be created
-        std::set<uint32_t>                   queue_families = { m_queue_indices.graphics_family.value(),
-                                             m_queue_indices.present_family.value(),
-                                             m_queue_indices.m_compute_family.value() };
+        // 2. 准备队列创建信息
+        std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+        // 使用集合去重：同一个队列族只创建一次
+        std::set<uint32_t> queue_families = { m_queue_indices.graphics_family.value(),
+                                              m_queue_indices.present_family.value(),
+                                              m_queue_indices.m_compute_family.value() };
 
-        float queue_priority = 1.0f;
-        for (uint32_t queue_family : queue_families) // for every queue family
+        float queue_priority = 1.0f;  // 所有队列使用最高优先级
+        for (uint32_t queue_family : queue_families)
         {
-            // queue create info
             VkDeviceQueueCreateInfo queue_create_info{};
             queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queue_create_info.queueFamilyIndex = queue_family;
-            queue_create_info.queueCount = 1;
-            queue_create_info.pQueuePriorities = &queue_priority;
+            queue_create_info.queueCount = 1;  // 每个队列族只创建一个队列
+            queue_create_info.pQueuePriorities = &queue_priority;  // 优先级配置
             queue_create_infos.push_back(queue_create_info);
         }
 
-        // physical device features
+        // 3. 配置物理设备特性 (Features)
         VkPhysicalDeviceFeatures physical_device_features = {};
-
+        // 必需特性：各向异性过滤
         physical_device_features.samplerAnisotropy = VK_TRUE;
-
-        // support inefficient readback storage buffer
+        // 重要特性：支持片段着色器存储缓冲区和原子操作
         physical_device_features.fragmentStoresAndAtomics = VK_TRUE;
-
-        // support independent blending
+        // 重要特性：支持独立混合（每个附件单独设置混合）
         physical_device_features.independentBlend = VK_TRUE;
 
-        // support geometry shader
+        // 条件特性：点光源阴影需要几何着色器
         if (m_enable_point_light_shadow)
         {
             physical_device_features.geometryShader = VK_TRUE;
         }
 
-        // device create info
+        // 4. 创建设备信息
         VkDeviceCreateInfo device_create_info{};
         device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         device_create_info.pQueueCreateInfos = queue_create_infos.data();
         device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-        device_create_info.pEnabledFeatures = &physical_device_features;
+        device_create_info.pEnabledFeatures = &physical_device_features;  // 启用的特性
         device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extensions.size());
-        device_create_info.ppEnabledExtensionNames = m_device_extensions.data();
+        device_create_info.ppEnabledExtensionNames = m_device_extensions.data();  // 启用的扩展
         device_create_info.enabledLayerCount = 0;
 
+        // 5. 创建设备
         if (vkCreateDevice(m_physical_device, &device_create_info, nullptr, &m_device) != VK_SUCCESS)
         {
-            LOG_ERROR("vk create device");
+            LOG_ERROR("Failed to create logical device!");
         }
 
-        // initialize queues of this device
+        // 6. 获取设备队列
+        // 6.1 获取图形队列
         VkQueue vk_graphics_queue;
         vkGetDeviceQueue(m_device, m_queue_indices.graphics_family.value(), 0, &vk_graphics_queue);
-        m_graphics_queue = new VulkanQueue();
+        m_graphics_queue = new VulkanQueue();  // 封装到自定义队列对象
         ((VulkanQueue*)m_graphics_queue)->setResource(vk_graphics_queue);
 
+        // 6.2 获取呈现队列
         vkGetDeviceQueue(m_device, m_queue_indices.present_family.value(), 0, &m_present_queue);
 
+        // 6.3 获取计算队列
         VkQueue vk_compute_queue;
         vkGetDeviceQueue(m_device, m_queue_indices.m_compute_family.value(), 0, &vk_compute_queue);
         m_compute_queue = new VulkanQueue();
         ((VulkanQueue*)m_compute_queue)->setResource(vk_compute_queue);
 
-        // more efficient pointer
+        // 7. 加载常用设备函数指针（提高调用效率）
+        // 每个命令都使用 vkGetDeviceProcAddr 动态获取函数指针
         _vkResetCommandPool = (PFN_vkResetCommandPool)vkGetDeviceProcAddr(m_device, "vkResetCommandPool");
         _vkBeginCommandBuffer = (PFN_vkBeginCommandBuffer)vkGetDeviceProcAddr(m_device, "vkBeginCommandBuffer");
         _vkEndCommandBuffer = (PFN_vkEndCommandBuffer)vkGetDeviceProcAddr(m_device, "vkEndCommandBuffer");
@@ -1061,10 +1082,9 @@ namespace Sammi
         _vkCmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets)vkGetDeviceProcAddr(m_device, "vkCmdBindDescriptorSets");
         _vkCmdClearAttachments = (PFN_vkCmdClearAttachments)vkGetDeviceProcAddr(m_device, "vkCmdClearAttachments");
 
+        // 8. 查询最佳深度格式
         m_depth_image_format = (RHIFormat)findDepthFormat();
     }
-
-
 
     #pragma endregion
 

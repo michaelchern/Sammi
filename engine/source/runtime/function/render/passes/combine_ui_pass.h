@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/render_pass.h"
 
-namespace Piccolo
+namespace Sammi
 {
     struct CombineUIPassInitInfo : RenderPassInitInfo
     {
@@ -24,4 +24,4 @@ namespace Piccolo
         void setupPipelines();
         void setupDescriptorSet();
     };
-} // namespace Piccolo
+}

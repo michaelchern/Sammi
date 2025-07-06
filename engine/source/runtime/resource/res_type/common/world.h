@@ -1,8 +1,10 @@
-#pragma once
+﻿#pragma once
+
 #include "runtime/core/meta/reflection/reflection.h"
 #include <string>
 #include <vector>
-namespace Piccolo
+
+namespace Sammi
 {
     REFLECTION_TYPE(WorldRes)
     CLASS(WorldRes, Fields)
@@ -19,4 +21,4 @@ namespace Piccolo
         // the default level for this world, which should be first loading level
         std::string m_default_level_url;
     };
-} // namespace Piccolo
+}

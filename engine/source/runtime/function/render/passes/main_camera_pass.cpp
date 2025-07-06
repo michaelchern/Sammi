@@ -1,4 +1,4 @@
-#include "runtime/function/render/passes/main_camera_pass.h"
+﻿#include "runtime/function/render/passes/main_camera_pass.h"
 #include "runtime/function/render/render_helper.h"
 #include "runtime/function/render/render_mesh.h"
 #include "runtime/function/render/render_resource.h"
@@ -19,7 +19,7 @@
 #include <skybox_frag.h>
 #include <skybox_vert.h>
 
-namespace Piccolo
+namespace Sammi
 {
     void MainCameraPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -2724,4 +2724,4 @@ namespace Piccolo
 
     void MainCameraPass::setParticlePass(std::shared_ptr<ParticlePass> pass) { m_particle_pass = pass; }
 
-} // namespace Piccolo
+}

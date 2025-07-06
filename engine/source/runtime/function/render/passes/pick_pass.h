@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/vector2.h"
 #include "runtime/function/render/render_pass.h"
 
-namespace Piccolo
+namespace Sammi
 {
     class RenderResourceBase;
 
@@ -40,4 +40,4 @@ namespace Piccolo
 
         RHIDescriptorSetLayout* _per_mesh_layout = nullptr;
     };
-} // namespace Piccolo
+}

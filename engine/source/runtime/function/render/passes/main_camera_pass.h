@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/render_pass.h"
 
@@ -9,7 +9,7 @@
 #include "runtime/function/render/passes/ui_pass.h"
 #include "runtime/function/render/passes/particle_pass.h"
 
-namespace Piccolo
+namespace Sammi
 {
     class RenderResourceBase;
 
@@ -120,4 +120,4 @@ namespace Piccolo
         std::vector<RHIFramebuffer*> m_swapchain_framebuffers;
         std::shared_ptr<ParticlePass> m_particle_pass;
     };
-} // namespace Piccolo
+}

@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/render_pass.h"
 
-namespace Piccolo
+namespace Sammi
 {
     class RenderResourceBase;
 
@@ -29,4 +29,4 @@ namespace Piccolo
         RHIDescriptorSetLayout* m_per_mesh_layout;
         MeshPointLightShadowPerframeStorageBufferObject m_mesh_point_light_shadow_perframe_storage_buffer_object;
     };
-} // namespace Piccolo
+}

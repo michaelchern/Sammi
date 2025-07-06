@@ -1,4 +1,4 @@
-#include "runtime/function/render/passes/point_light_pass.h"
+﻿#include "runtime/function/render/passes/point_light_pass.h"
 
 #include "runtime/function/render/render_helper.h"
 #include "runtime/function/render/render_mesh.h"
@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     void PointLightShadowPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -699,4 +699,4 @@ namespace Piccolo
         m_rhi->cmdEndRenderPassPFN(m_rhi->getCurrentCommandBuffer());
     }
 
-} // namespace Piccolo
+}

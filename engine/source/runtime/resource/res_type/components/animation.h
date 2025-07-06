@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/meta/reflection/reflection.h"
 #include "runtime/resource/res_type/data/blend_state.h"
@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
 
     REFLECTION_TYPE(AnimationResultElement)
@@ -43,4 +43,4 @@ namespace Piccolo
         AnimationResult animation_result;
     };
 
-} // namespace Piccolo
+}

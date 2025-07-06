@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "runtime/core/meta/reflection/reflection.h"
 
 #include "runtime/core/math/vector3.h"
 
 #include "runtime/resource/res_type/common/object.h"
 
-namespace Piccolo
+namespace Sammi
 {
     REFLECTION_TYPE(LevelRes)
     CLASS(LevelRes, Fields)
@@ -18,4 +18,4 @@ namespace Piccolo
 
         std::vector<ObjectInstanceRes> m_objects;
     };
-} // namespace Piccolo
+}

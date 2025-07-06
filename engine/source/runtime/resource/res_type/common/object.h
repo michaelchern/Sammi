@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "runtime/core/meta/reflection/reflection.h"
 
 
 #include <string>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     class Component;
 
@@ -39,4 +39,4 @@ namespace Piccolo
 
         std::vector<Reflection::ReflectionPtr<Component>> m_instanced_components;
     };
-} // namespace Piccolo
+}

@@ -553,16 +553,6 @@ namespace Sammi
         delete(command_buffer);
     }
 
-    // validation layers
-    
-
-    
-
-    // debug callback
-    
-
-    
-
     #pragma region 1-Instance
 
     void VulkanRHI::createInstance()
@@ -1099,6 +1089,111 @@ namespace Sammi
     }
 
     #pragma endregion
+
+    #pragma region 4-SwapChain
+
+    // 创建Vulkan交换链（Swapchain）
+    void VulkanRHI::createSwapchain()
+    {
+        // 查询物理设备支持的交换链特性（格式/显示模式/分辨率范围等）
+        SwapChainSupportDetails swapchain_support_details = querySwapChainSupport(m_physical_device);
+
+        // 从支持的格式列表中选择最佳表面格式（颜色深度/色彩空间）
+        VkSurfaceFormatKHR chosen_surface_format = chooseSwapchainSurfaceFormatFromDetails(swapchain_support_details.formats);
+        
+        // 从支持的显示模式中选择最佳呈现模式（垂直同步/立即显示等）
+        VkPresentModeKHR chosen_presentMode = chooseSwapchainPresentModeFromDetails(swapchain_support_details.presentModes);
+        
+        // 从表面能力中选择最佳分辨率（适配窗口的显示范围）
+        VkExtent2D chosen_extent = chooseSwapchainExtentFromDetails(swapchain_support_details.capabilities);
+
+        // 确定交换链图像数量（至少比最小值多1以获得更好的性能）
+        uint32_t image_count = swapchain_support_details.capabilities.minImageCount + 1;
+
+        // 检查最大数量限制（0表示无上限）
+        if (swapchain_support_details.capabilities.maxImageCount > 0 &&
+            image_count > swapchain_support_details.capabilities.maxImageCount)
+        {
+            image_count = swapchain_support_details.capabilities.maxImageCount;
+        }
+
+        // 配置交换链创建信息
+        VkSwapchainCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        createInfo.surface = m_surface;  // 关联的Vulkan表面
+
+        // 设置核心参数
+        createInfo.minImageCount = image_count;  // 交换链图像数量
+        createInfo.imageFormat = chosen_surface_format.format;  // 图像格式
+        createInfo.imageColorSpace = chosen_surface_format.colorSpace;  // 色彩空间
+        createInfo.imageExtent = chosen_extent;  // 图像分辨率
+        createInfo.imageArrayLayers = 1;  // 始终为1（非立体渲染）
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // 作为颜色附件使用
+
+        // 获取图形队列和呈现队列的家族索引
+        uint32_t queueFamilyIndices[] =
+        {
+            m_queue_indices.graphics_family.value(),
+            m_queue_indices.present_family.value()
+        };
+
+        // 处理队列家族共享模式
+        if (m_queue_indices.graphics_family != m_queue_indices.present_family)
+        {
+            // 不同队列家族：使用并发模式（需要显式指定共享队列）
+            createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            createInfo.queueFamilyIndexCount = 2;  // 涉及的队列家族数量
+            createInfo.pQueueFamilyIndices = queueFamilyIndices;  // 队列家族指针
+        }
+        else
+        {
+            // 同一队列家族：使用独占模式（性能更优）
+            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        }
+
+        // 设置变换操作（通常保持当前transform避免额外开销）
+        createInfo.preTransform = swapchain_support_details.capabilities.currentTransform;
+        // 设置alpha通道合成（忽略Alpha通道）
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        // 应用选择的呈现模式
+        createInfo.presentMode = chosen_presentMode;
+        // 启用裁剪（剪裁被遮挡的像素优化性能）
+        createInfo.clipped = VK_TRUE;
+
+        // 旧交换链指针（初次创建设为null）
+        createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+        // 创建交换链
+        if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain) != VK_SUCCESS)
+        {
+            LOG_ERROR("vk create swapchain khr");
+        }
+
+        // 获取交换链中的实际VkImage对象
+        vkGetSwapchainImagesKHR(m_device, m_swapchain, &image_count, nullptr);  // 首先查询数量
+        m_swapchain_images.resize(image_count);  // 调整容器大小
+        vkGetSwapchainImagesKHR(m_device, m_swapchain, &image_count, m_swapchain_images.data());  // 获取图像句柄
+
+        // 存储交换链关键参数
+        m_swapchain_image_format = (RHIFormat)chosen_surface_format.format;  // 转换并存储格式
+        m_swapchain_extent.height = chosen_extent.height;  // 存储高度
+        m_swapchain_extent.width = chosen_extent.width;   // 存储宽度
+
+        // 初始化裁剪区域（默认为整个交换链范围）
+        m_scissor = { {0, 0}, {m_swapchain_extent.width, m_swapchain_extent.height} };
+    }
+
+    void VulkanRHI::clearSwapchain()
+    {
+        for (auto imageview : m_swapchain_imageviews)
+        {
+            vkDestroyImageView(m_device, ((VulkanImageView*)imageview)->getResource(), NULL);
+        }
+        vkDestroySwapchainKHR(m_device, m_swapchain, NULL); // also swapchain images
+    }
+
+    #pragma endregion
+
 
     
 
@@ -3304,82 +3399,7 @@ namespace Sammi
         }
     }
 
-    void VulkanRHI::createSwapchain()
-    {
-        // query all supports of this physical device
-        SwapChainSupportDetails swapchain_support_details = querySwapChainSupport(m_physical_device);
-
-        // choose the best or fitting format
-        VkSurfaceFormatKHR chosen_surface_format =
-            chooseSwapchainSurfaceFormatFromDetails(swapchain_support_details.formats);
-        // choose the best or fitting present mode
-        VkPresentModeKHR chosen_presentMode =
-            chooseSwapchainPresentModeFromDetails(swapchain_support_details.presentModes);
-        // choose the best or fitting extent
-        VkExtent2D chosen_extent = chooseSwapchainExtentFromDetails(swapchain_support_details.capabilities);
-
-        uint32_t image_count = swapchain_support_details.capabilities.minImageCount + 1;
-        if (swapchain_support_details.capabilities.maxImageCount > 0 &&
-            image_count > swapchain_support_details.capabilities.maxImageCount)
-        {
-            image_count = swapchain_support_details.capabilities.maxImageCount;
-        }
-
-        VkSwapchainCreateInfoKHR createInfo {};
-        createInfo.sType   = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        createInfo.surface = m_surface;
-
-        createInfo.minImageCount    = image_count;
-        createInfo.imageFormat      = chosen_surface_format.format;
-        createInfo.imageColorSpace  = chosen_surface_format.colorSpace;
-        createInfo.imageExtent      = chosen_extent;
-        createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-        uint32_t queueFamilyIndices[] = {m_queue_indices.graphics_family.value(), m_queue_indices.present_family.value()};
-
-        if (m_queue_indices.graphics_family != m_queue_indices.present_family)
-        {
-            createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
-            createInfo.queueFamilyIndexCount = 2;
-            createInfo.pQueueFamilyIndices   = queueFamilyIndices;
-        }
-        else
-        {
-            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        }
-
-        createInfo.preTransform   = swapchain_support_details.capabilities.currentTransform;
-        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        createInfo.presentMode    = chosen_presentMode;
-        createInfo.clipped        = VK_TRUE;
-
-        createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-        if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain) != VK_SUCCESS)
-        {
-            LOG_ERROR("vk create swapchain khr");
-        }
-
-        vkGetSwapchainImagesKHR(m_device, m_swapchain, &image_count, nullptr);
-        m_swapchain_images.resize(image_count);
-        vkGetSwapchainImagesKHR(m_device, m_swapchain, &image_count, m_swapchain_images.data());
-
-        m_swapchain_image_format = (RHIFormat)chosen_surface_format.format;
-        m_swapchain_extent.height = chosen_extent.height;
-        m_swapchain_extent.width = chosen_extent.width;
-
-        m_scissor = {{0, 0}, {m_swapchain_extent.width, m_swapchain_extent.height}};
-    }
-
-    void VulkanRHI::clearSwapchain()
-    {
-        for (auto imageview : m_swapchain_imageviews)
-        {
-            vkDestroyImageView(m_device, ((VulkanImageView*)imageview)->getResource(), NULL);
-        }
-        vkDestroySwapchainKHR(m_device, m_swapchain, NULL); // also swapchain images
-    }
+    
 
     void VulkanRHI::destroyDefaultSampler(RHIDefaultSamplerType type)
     {

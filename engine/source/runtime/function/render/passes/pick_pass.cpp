@@ -1,4 +1,4 @@
-#include "runtime/function/render/passes/pick_pass.h"
+﻿#include "runtime/function/render/passes/pick_pass.h"
 
 #include "runtime/function/render/render_mesh.h"
 #include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
@@ -14,7 +14,7 @@
 #include <map>
 #include <stdexcept>
 
-namespace Piccolo
+namespace Sammi
 {
     void PickPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -790,4 +790,4 @@ namespace Piccolo
 
         return node_id;
     }
-} // namespace Piccolo
+}

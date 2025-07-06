@@ -1,4 +1,4 @@
-#include "runtime/function/render/passes/particle_pass.h"
+﻿#include "runtime/function/render/passes/particle_pass.h"
 
 #include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
 #include "runtime/function/render/interface/vulkan/vulkan_util.h"
@@ -16,7 +16,7 @@
 #include <particlebillboard_frag.h>
 #include <particlebillboard_vert.h>
 
-namespace Piccolo
+namespace Sammi
 {
     void ParticleEmitterBufferBatch::freeUpBatch(std::shared_ptr<RHI> rhi)
     {
@@ -1972,4 +1972,4 @@ namespace Piccolo
     {
         m_emitter_transform_indices = transform_indices;
     }
-} // namespace Piccolo
+}

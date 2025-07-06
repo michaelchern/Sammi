@@ -7,34 +7,29 @@
 
 namespace Sammi
 {
+    // Vulkan缓冲区资源封装类（对应VkBuffer）
     class VulkanBuffer : public RHIBuffer
     {
     public:
-        void setResource(VkBuffer res)
-        {
-            m_resource = res;
-        }
-        VkBuffer getResource() const
-        {
-            return m_resource;
-        }
+        // 设置底层Vulkan缓冲区资源句柄
+        void setResource(VkBuffer res) { m_resource = res; }
+        // 获取底层Vulkan缓冲区资源句柄
+        VkBuffer getResource() const { return m_resource; }
     private:
-        VkBuffer m_resource;
+        VkBuffer m_resource;  // Vulkan缓冲区句柄
     };
+
+    // Vulkan缓冲区视图封装类（对应VkBufferView）
     class VulkanBufferView : public RHIBufferView
     {
     public:
-        void setResource(VkBufferView res)
-        {
-            m_resource = res;
-        }
-        VkBufferView getResource() const
-        {
-            return m_resource;
-        }
+        void setResource(VkBufferView res) { m_resource = res; }
+        VkBufferView getResource() const { return m_resource; }
     private:
-        VkBufferView m_resource;
+        VkBufferView m_resource;  // 缓冲区视图句柄
     };
+
+    // Vulkan命令缓冲区封装类（对应VkCommandBuffer）
     class VulkanCommandBuffer : public RHICommandBuffer
     {
     public:
@@ -217,6 +212,7 @@ namespace Sammi
     private:
         VkInstance m_resource;
     };
+
     class VulkanQueue : public RHIQueue
     {
     public:
@@ -231,6 +227,7 @@ namespace Sammi
     private:
         VkQueue m_resource;
     };
+
     class VulkanPhysicalDevice : public RHIPhysicalDevice
     {
     public:

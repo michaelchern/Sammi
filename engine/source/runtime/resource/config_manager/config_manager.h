@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include <filesystem>
 
-namespace Piccolo
+namespace Sammi
 {
     struct EngineInitParams;
 
@@ -42,4 +42,4 @@ namespace Piccolo
         std::string m_global_rendering_res_url;
         std::string m_global_particle_res_url;
     };
-} // namespace Piccolo
+}

@@ -1,4 +1,4 @@
-#include "runtime/function/render/passes/ui_pass.h"
+﻿#include "runtime/function/render/passes/ui_pass.h"
 
 #include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
 
@@ -9,7 +9,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
-namespace Piccolo
+namespace Sammi
 {
     void UIPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -104,4 +104,4 @@ namespace Piccolo
             m_rhi->popEvent(m_rhi->getCurrentCommandBuffer());
         }
     }
-} // namespace Piccolo
+}

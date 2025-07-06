@@ -1,4 +1,4 @@
-#include "runtime/resource/config_manager/config_manager.h"
+﻿#include "runtime/resource/config_manager/config_manager.h"
 
 #include "runtime/engine.h"
 
@@ -6,7 +6,7 @@
 #include <fstream>
 #include <string>
 
-namespace Piccolo
+namespace Sammi
 {
     void ConfigManager::initialize(const std::filesystem::path& config_file_path)
     {
@@ -88,4 +88,4 @@ namespace Piccolo
     const std::filesystem::path& ConfigManager::getJoltPhysicsAssetFolder() const { return m_jolt_physics_asset_folder; }
 #endif
 
-} // namespace Piccolo
+}

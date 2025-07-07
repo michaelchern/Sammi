@@ -1,13 +1,13 @@
-#include "runtime/function/render/render_pass.h"
+﻿#include "runtime/function/render/render_pass.h"
 
 #include "runtime/core/base/macro.h"
 
 #include "runtime/function/render/render_resource.h"
 #include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
 
-Piccolo::VisiableNodes Piccolo::RenderPass::m_visiable_nodes;
+Sammi::VisiableNodes Sammi::RenderPass::m_visiable_nodes;
 
-namespace Piccolo
+namespace Sammi
 {
     void RenderPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -39,4 +39,4 @@ namespace Piccolo
         }
         return layouts;
     }
-} // namespace Piccolo
+}

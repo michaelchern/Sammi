@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/matrix4.h"
 #include "runtime/core/math/vector3.h"
@@ -10,7 +10,7 @@
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
-namespace Piccolo
+namespace Sammi
 {
     static const uint32_t s_point_light_shadow_map_dimension       = 2048;
     static const uint32_t s_directional_light_shadow_map_dimension = 4096;
@@ -272,4 +272,4 @@ namespace Piccolo
         RHIFormat emissive_image_format;
         VulkanPBRMaterial* now_material;
     };
-} // namespace Piccolo
+}

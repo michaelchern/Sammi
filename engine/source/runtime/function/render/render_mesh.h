@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/vector2.h"
 #include "runtime/core/math/vector3.h"
@@ -7,7 +7,7 @@
 #include <array>
 #include "interface/rhi.h"
 
-namespace Piccolo
+namespace Sammi
 {
     struct MeshVertex
     {
@@ -81,4 +81,4 @@ namespace Piccolo
             return attribute_descriptions;
         }
     };
-} // namespace Piccolo
+}

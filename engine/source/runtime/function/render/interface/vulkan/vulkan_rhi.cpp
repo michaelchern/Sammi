@@ -1092,6 +1092,92 @@ namespace Sammi
 
     #pragma region 4-SwapChain
 
+    // 选择交换链的表面格式
+    VkSurfaceFormatKHR VulkanRHI::chooseSwapchainSurfaceFormatFromDetails(const std::vector<VkSurfaceFormatKHR>& available_surface_formats)
+    {
+        // 遍历所有可用的表面格式
+        for (const auto& surface_format : available_surface_formats)
+        {
+            /* TODO：优先选择 VK_FORMAT_B8G8R8A8_SRGB 格式（当前实现选择的是 UNORM）
+             * 这样可以在不进行额外 gamma 校正的情况下正确显示 sRGB 颜色空间
+             * 实际首选格式应为：
+             *    surface_format.format == VK_FORMAT_B8G8R8A8_SRGB
+             */
+
+            // 当前选择逻辑：BGRA 8位无符号归一化格式 + sRGB非线性颜色空间
+            if (surface_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
+                surface_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
+                return surface_format;  // 返回满足条件的首选格式
+            }
+        }
+
+        // 未找到理想格式时返回列表中的第一个可用格式
+        return available_surface_formats[0];
+    }
+
+    // 选择交换链的呈现模式
+    VkPresentModeKHR VulkanRHI::chooseSwapchainPresentModeFromDetails(const std::vector<VkPresentModeKHR>& available_present_modes)
+    {
+        // 遍历所有可用的呈现模式
+        for (VkPresentModeKHR present_mode : available_present_modes)
+        {
+            // 优先选择 mailbox 模式（三重缓冲）
+            if (VK_PRESENT_MODE_MAILBOX_KHR == present_mode)
+            {
+                /* Mailbox 模式特点：
+                 * - 当交换链队列满时，用新图像替换排队图像
+                 * - 避免垂直同步导致的延迟
+                 * - 适合需要低延迟的场景
+                 */
+
+                return VK_PRESENT_MODE_MAILBOX_KHR;
+            }
+        }
+
+        // 保底选择：FIFO 模式（垂直同步）
+        /* FIFO 模式特点：
+         * - 所有驱动程序必须支持的模式
+         * - 队列满时阻塞等待
+         * - 避免画面撕裂
+         * - 类似传统垂直同步
+         */
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    // 选择交换链的显示尺寸
+    VkExtent2D VulkanRHI::chooseSwapchainExtentFromDetails(const VkSurfaceCapabilitiesKHR& capabilities)
+    {
+        // 检查是否当前扩展已被明确指定
+        if (capabilities.currentExtent.width != UINT32_MAX)
+        {
+            /* 情况1：surface 已定义明确尺寸（通常为窗口匹配的分辨率）
+             * 直接返回预先定义好的尺寸
+             */
+            return capabilities.currentExtent;
+        }
+        else
+        {
+            // 情况2：需要根据窗口实际大小计算
+            int width, height;
+            // 获取 GLFW 窗口帧缓冲区的当前尺寸
+            glfwGetFramebufferSize(m_window, &width, &height);
+
+            // 构造目标扩展（转换为 uint32_t）
+            VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+
+            /* 将尺寸约束在硬件支持的范围内
+             * - 使用 std::clamp 确保宽度在 [min, max] 区间
+             * - 避免创建超出显示能力的交换链
+             */
+
+            actualExtent.width  = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+            actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+            return actualExtent;  // 返回校准后的尺寸
+        }
+    }
+
     // 创建Vulkan交换链（Swapchain）
     void VulkanRHI::createSwapchain()
     {
@@ -3618,57 +3704,6 @@ namespace Sammi
         return VkFormat();
     }
 
-    VkSurfaceFormatKHR
-    VulkanRHI::chooseSwapchainSurfaceFormatFromDetails(const std::vector<VkSurfaceFormatKHR>& available_surface_formats)
-    {
-        for (const auto& surface_format : available_surface_formats)
-        {
-            // TODO: select the VK_FORMAT_B8G8R8A8_SRGB surface format,
-            // there is no need to do gamma correction in the fragment shader
-            if (surface_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-                surface_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            {
-                return surface_format;
-            }
-        }
-        return available_surface_formats[0];
-    }
-
-    VkPresentModeKHR
-    VulkanRHI::chooseSwapchainPresentModeFromDetails(const std::vector<VkPresentModeKHR>& available_present_modes)
-    {
-        for (VkPresentModeKHR present_mode : available_present_modes)
-        {
-            if (VK_PRESENT_MODE_MAILBOX_KHR == present_mode)
-            {
-                return VK_PRESENT_MODE_MAILBOX_KHR;
-            }
-        }
-
-        return VK_PRESENT_MODE_FIFO_KHR;
-    }
-
-    VkExtent2D VulkanRHI::chooseSwapchainExtentFromDetails(const VkSurfaceCapabilitiesKHR& capabilities)
-    {
-        if (capabilities.currentExtent.width != UINT32_MAX)
-        {
-            return capabilities.currentExtent;
-        }
-        else
-        {
-            int width, height;
-            glfwGetFramebufferSize(m_window, &width, &height);
-
-            VkExtent2D actualExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-
-            actualExtent.width =
-                std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-            actualExtent.height =
-                std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-            return actualExtent;
-        }
-    }
 
     void VulkanRHI::pushEvent(RHICommandBuffer* commond_buffer, const char* name, const float* color)
     {

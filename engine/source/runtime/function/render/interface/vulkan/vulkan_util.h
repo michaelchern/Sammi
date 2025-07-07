@@ -107,6 +107,12 @@ namespace Sammi
         static void      destroyNearestSampler(VkDevice device);
         static void      destroyLinearSampler(VkDevice device);
 
+        #pragma region 5-Pipeline
+
+
+
+        #pragma endregion
+
     private:
         static std::unordered_map<uint32_t, VkSampler> m_mipmap_sampler_map;
         static VkSampler                               m_nearest_sampler;

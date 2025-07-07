@@ -297,6 +297,11 @@ namespace Sammi
     #pragma endregion
 
 
+    #pragma region 5-Pipeline
+
+
+
+    #pragma endregion
 
     void VulkanUtil::createGlobalImage(RHI*               rhi,
                                        VkImage&           image,

@@ -280,13 +280,11 @@ namespace Sammi
         RHIViewport m_viewport;                                // 视口设置
         
 
-
         #pragma region 1-Instance
 
         VkInstance m_instance{ nullptr };
 
         #pragma endregion
-
 
 
 
@@ -307,6 +305,13 @@ namespace Sammi
         RHIExtent2D m_swapchain_extent;                        // 交换链尺寸
         RHIRect2D m_scissor;                                    // 裁剪区域
         std::vector<RHIImageView*> m_swapchain_imageviews;      // 交换链图像视图
+
+        #pragma endregion
+
+
+
+        #pragma region 5-Pipeline
+
 
 
         #pragma endregion

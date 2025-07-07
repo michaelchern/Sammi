@@ -191,20 +191,19 @@ namespace Sammi
     class VulkanImageView : public RHIImageView
     {
     public:
-        void setResource(VkImageView res)
-        {
-            m_resource = res;
-        }
-        VkImageView getResource() const
-        {
-            return m_resource;
-        }
+        void setResource(VkImageView res) { m_resource = res; }
+        VkImageView getResource() const { return m_resource; }
     private:
         VkImageView m_resource;
     };
 
     #pragma endregion
 
+    #pragma region 5-Pipeline
+
+
+
+    #pragma endregion
 
     
     class VulkanInstance : public RHIInstance

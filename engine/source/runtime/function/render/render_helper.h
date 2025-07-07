@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/vector3.h"
 #include "runtime/core/math/vector4.h"
 
-namespace Piccolo
+namespace Sammi
 {
     class RenderScene;
     class RenderCamera;
@@ -82,4 +82,4 @@ namespace Piccolo
     bool BoxIntersectsWithSphere(BoundingBox const& b, BoundingSphere const& s);
 
     Matrix4x4 CalculateDirectionalLightCamera(RenderScene& scene, RenderCamera& camera);
-} // namespace Piccolo
+}

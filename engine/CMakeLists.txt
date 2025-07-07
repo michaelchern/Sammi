@@ -70,8 +70,8 @@ else()
 endif()
 
 # 添加着色器编译目标并进入shader子目录
-#set(SHADER_COMPILE_TARGET PiccoloShaderCompile)
-#add_subdirectory(shader)
+set(SHADER_COMPILE_TARGET SammiShaderCompile)
+add_subdirectory(shader)
 
 # 添加第三方库子目录
 add_subdirectory(3rdparty)

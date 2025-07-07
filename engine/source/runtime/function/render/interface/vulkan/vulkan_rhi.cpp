@@ -1327,253 +1327,35 @@ namespace Sammi
 
     #pragma region 5-Pipeline
 
-
-
-    #pragma endregion
-
-    
-
-    void VulkanRHI::createCommandPool()
+    // 创建自定义的着色器对象（继承自RHIShader）
+    RHIShader* VulkanRHI::createShaderModule(const std::vector<unsigned char>& shader_code)
     {
-        // default graphics command pool
-        {
-            m_rhi_command_pool = new VulkanCommandPool();
-            VkCommandPool vk_command_pool;
-            VkCommandPoolCreateInfo command_pool_create_info {};
-            command_pool_create_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            command_pool_create_info.pNext            = NULL;
-            command_pool_create_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-            command_pool_create_info.queueFamilyIndex = m_queue_indices.graphics_family.value();
+        RHIShader* shahder = new VulkanShader();
 
-            if (vkCreateCommandPool(m_device, &command_pool_create_info, nullptr, &vk_command_pool) != VK_SUCCESS)
-            {
-                LOG_ERROR("vk create command pool");
-            }
+        /* 关键步骤：将 SPIR-V 字节码编译为 Vulkan 着色器模块
+         * 参数：
+         *   m_device - Vulkan 逻辑设备
+         *   shader_code - 包含 SPIR-V 字节码的二进制数据
+         */
+        VkShaderModule vk_shader = VulkanUtil::createShaderModule(m_device, shader_code);
 
-            ((VulkanCommandPool*)m_rhi_command_pool)->setResource(vk_command_pool);
-        }
+        // 将底层 Vulkan 句柄存入自定义着色器对象
+        ((VulkanShader*)shahder)->setResource(vk_shader);
 
-        // other command pools
-        {
-            VkCommandPoolCreateInfo command_pool_create_info;
-            command_pool_create_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            command_pool_create_info.pNext            = NULL;
-            command_pool_create_info.flags            = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-            command_pool_create_info.queueFamilyIndex = m_queue_indices.graphics_family.value();
-
-            for (uint32_t i = 0; i < k_max_frames_in_flight; ++i)
-            {
-                if (vkCreateCommandPool(m_device, &command_pool_create_info, NULL, &m_command_pools[i]) != VK_SUCCESS)
-                {
-                    LOG_ERROR("vk create command pool");
-                }
-            }
-        }
+        return shahder;  // 返回封装好的着色器对象
     }
 
-    bool VulkanRHI::createCommandPool(const RHICommandPoolCreateInfo* pCreateInfo, RHICommandPool* &pCommandPool)
+    bool VulkanRHI::createGraphicsPipelines(RHIPipelineCache* pipelineCache,             // 管线缓存对象指针 (可选)
+                                            uint32_t createInfoCount,                    // 要创建的管线数量
+                                      const RHIGraphicsPipelineCreateInfo* pCreateInfo,  // 管线创建信息数组
+                                            RHIPipeline* &pPipelines)                    // 输出参数：创建的管线对象
     {
-        VkCommandPoolCreateInfo create_info{};
-        create_info.sType = (VkStructureType)pCreateInfo->sType;
-        create_info.pNext = (const void*)pCreateInfo->pNext;
-        create_info.flags = (VkCommandPoolCreateFlags)pCreateInfo->flags;
-        create_info.queueFamilyIndex = pCreateInfo->queueFamilyIndex;
-
-        pCommandPool = new VulkanCommandPool();
-        VkCommandPool vk_commandPool;
-        VkResult result = vkCreateCommandPool(m_device, &create_info, nullptr, &vk_commandPool);
-        ((VulkanCommandPool*)pCommandPool)->setResource(vk_commandPool);
-
-        if (result == VK_SUCCESS)
-        {
-            return RHI_SUCCESS;
-        }
-        else
-        {
-            LOG_ERROR("vkCreateCommandPool is failed!");
-            return false;
-        }
-    }
-
-    bool VulkanRHI::createDescriptorPool(const RHIDescriptorPoolCreateInfo* pCreateInfo, RHIDescriptorPool* & pDescriptorPool)
-    {
-        int size = pCreateInfo->poolSizeCount;
-        std::vector<VkDescriptorPoolSize> descriptor_pool_size(size);
-        for (int i = 0; i < size; ++i)
-        {
-            const auto& rhi_desc = pCreateInfo->pPoolSizes[i];
-            auto& vk_desc = descriptor_pool_size[i];
-
-            vk_desc.type = (VkDescriptorType)rhi_desc.type;
-            vk_desc.descriptorCount = rhi_desc.descriptorCount;
-        };
-
-        VkDescriptorPoolCreateInfo create_info{};
-        create_info.sType = (VkStructureType)pCreateInfo->sType;
-        create_info.pNext = (const void*)pCreateInfo->pNext;
-        create_info.flags = (VkDescriptorPoolCreateFlags)pCreateInfo->flags;
-        create_info.maxSets = pCreateInfo->maxSets;
-        create_info.poolSizeCount = pCreateInfo->poolSizeCount;
-        create_info.pPoolSizes = descriptor_pool_size.data();
-
-        pDescriptorPool = new VulkanDescriptorPool();
-        VkDescriptorPool vk_descriptorPool;
-        VkResult result = vkCreateDescriptorPool(m_device, &create_info, nullptr, &vk_descriptorPool);
-        ((VulkanDescriptorPool*)pDescriptorPool)->setResource(vk_descriptorPool);
-
-        if (result == VK_SUCCESS)
-        {
-            return RHI_SUCCESS;
-        }
-        else
-        {
-            LOG_ERROR("vkCreateDescriptorPool is failed!");
-            return false;
-        }
-    }
-
-    bool VulkanRHI::createDescriptorSetLayout(const RHIDescriptorSetLayoutCreateInfo* pCreateInfo, RHIDescriptorSetLayout* &pSetLayout)
-    {
-        //descriptor_set_layout_binding
-        int descriptor_set_layout_binding_size = pCreateInfo->bindingCount;
-        std::vector<VkDescriptorSetLayoutBinding> vk_descriptor_set_layout_binding_list(descriptor_set_layout_binding_size);
-
-        int sampler_count = 0;
-        for (int i = 0; i < descriptor_set_layout_binding_size; ++i)
-        {
-            const auto& rhi_descriptor_set_layout_binding_element = pCreateInfo->pBindings[i];
-            if (rhi_descriptor_set_layout_binding_element.pImmutableSamplers != nullptr)
-            {
-                sampler_count += rhi_descriptor_set_layout_binding_element.descriptorCount;
-            }
-        }
-        std::vector<VkSampler> sampler_list(sampler_count);
-        int sampler_current = 0;
-
-        for (int i = 0; i < descriptor_set_layout_binding_size; ++i)
-        {
-            const auto& rhi_descriptor_set_layout_binding_element = pCreateInfo->pBindings[i];
-            auto& vk_descriptor_set_layout_binding_element = vk_descriptor_set_layout_binding_list[i];
-
-            //sampler
-            vk_descriptor_set_layout_binding_element.pImmutableSamplers = nullptr;
-            if (rhi_descriptor_set_layout_binding_element.pImmutableSamplers)
-            {
-                vk_descriptor_set_layout_binding_element.pImmutableSamplers = &sampler_list[sampler_current];
-                for (int i = 0; i < rhi_descriptor_set_layout_binding_element.descriptorCount; ++i)
-                {
-                    const auto& rhi_sampler_element = rhi_descriptor_set_layout_binding_element.pImmutableSamplers[i];
-                    auto& vk_sampler_element = sampler_list[sampler_current];
-
-                    vk_sampler_element = ((VulkanSampler*)rhi_sampler_element)->getResource();
-
-                    sampler_current++;
-                };
-            }
-            vk_descriptor_set_layout_binding_element.binding = rhi_descriptor_set_layout_binding_element.binding;
-            vk_descriptor_set_layout_binding_element.descriptorType = (VkDescriptorType)rhi_descriptor_set_layout_binding_element.descriptorType;
-            vk_descriptor_set_layout_binding_element.descriptorCount = rhi_descriptor_set_layout_binding_element.descriptorCount;
-            vk_descriptor_set_layout_binding_element.stageFlags = rhi_descriptor_set_layout_binding_element.stageFlags;
-        };
-        
-        if (sampler_count != sampler_current)
-        {
-            LOG_ERROR("sampler_count != sampller_current");
-            return false;
-        }
-
-        VkDescriptorSetLayoutCreateInfo create_info{};
-        create_info.sType = (VkStructureType)pCreateInfo->sType;
-        create_info.pNext = (const void*)pCreateInfo->pNext;
-        create_info.flags = (VkDescriptorSetLayoutCreateFlags)pCreateInfo->flags;
-        create_info.bindingCount = pCreateInfo->bindingCount;
-        create_info.pBindings = vk_descriptor_set_layout_binding_list.data();
-
-        pSetLayout = new VulkanDescriptorSetLayout();
-        VkDescriptorSetLayout vk_descriptorSetLayout;
-        VkResult result = vkCreateDescriptorSetLayout(m_device, &create_info, nullptr, &vk_descriptorSetLayout);
-        ((VulkanDescriptorSetLayout*)pSetLayout)->setResource(vk_descriptorSetLayout);
-
-        if (result == VK_SUCCESS)
-        {
-            return RHI_SUCCESS;
-        }
-        else
-        {
-            LOG_ERROR("vkCreateDescriptorSetLayout failed!");
-            return false;
-        }
-    }
-
-    bool VulkanRHI::createFence(const RHIFenceCreateInfo* pCreateInfo, RHIFence* &pFence)
-    {
-        VkFenceCreateInfo create_info{};
-        create_info.sType = (VkStructureType)pCreateInfo->sType;
-        create_info.pNext = (const void*)pCreateInfo->pNext;
-        create_info.flags = (VkFenceCreateFlags)pCreateInfo->flags;
-
-        pFence = new VulkanFence();
-        VkFence vk_fence;
-        VkResult result = vkCreateFence(m_device, &create_info, nullptr, &vk_fence);
-        ((VulkanFence*)pFence)->setResource(vk_fence);
-
-        if (result == VK_SUCCESS)
-        {
-            return RHI_SUCCESS;
-        }
-        else
-        {
-            LOG_ERROR("vkCreateFence failed!");
-            return false;
-        }
-    }
-
-    bool VulkanRHI::createFramebuffer(const RHIFramebufferCreateInfo* pCreateInfo, RHIFramebuffer* &pFramebuffer)
-    {
-        //image_view
-        int image_view_size = pCreateInfo->attachmentCount;
-        std::vector<VkImageView> vk_image_view_list(image_view_size);
-        for (int i = 0; i < image_view_size; ++i)
-        {
-            const auto& rhi_image_view_element = pCreateInfo->pAttachments[i];
-            auto& vk_image_view_element = vk_image_view_list[i];
-
-            vk_image_view_element = ((VulkanImageView*)rhi_image_view_element)->getResource();
-        };
-
-        VkFramebufferCreateInfo create_info{};
-        create_info.sType = (VkStructureType)pCreateInfo->sType;
-        create_info.pNext = (const void*)pCreateInfo->pNext;
-        create_info.flags = (VkFramebufferCreateFlags)pCreateInfo->flags;
-        create_info.renderPass = ((VulkanRenderPass*)pCreateInfo->renderPass)->getResource();
-        create_info.attachmentCount = pCreateInfo->attachmentCount;
-        create_info.pAttachments = vk_image_view_list.data();
-        create_info.width = pCreateInfo->width;
-        create_info.height = pCreateInfo->height;
-        create_info.layers = pCreateInfo->layers;
-
-        pFramebuffer = new VulkanFramebuffer();
-        VkFramebuffer vk_framebuffer;
-        VkResult result = vkCreateFramebuffer(m_device, &create_info, nullptr, &vk_framebuffer);
-        ((VulkanFramebuffer*)pFramebuffer)->setResource(vk_framebuffer);
-
-        if (result == VK_SUCCESS)
-        {
-            return RHI_SUCCESS;
-        }
-        else
-        {
-            LOG_ERROR("vkCreateFramebuffer failed!");
-            return false;
-        }
-    }
-
-    bool VulkanRHI::createGraphicsPipelines(RHIPipelineCache* pipelineCache, uint32_t createInfoCount, const RHIGraphicsPipelineCreateInfo* pCreateInfo, RHIPipeline* &pPipelines)
-    {
-        //pipeline_shader_stage_create_info
+        // --- 1. 处理着色器阶段信息 ---
+        // 获取着色器阶段数量并创建Vulkan结构体数组
         int pipeline_shader_stage_create_info_size = pCreateInfo->stageCount;
         std::vector<VkPipelineShaderStageCreateInfo> vk_pipeline_shader_stage_create_info_list(pipeline_shader_stage_create_info_size);
 
+        // 预计算特化常量的总数量（优化内存分配）
         int specialization_map_entry_size_total = 0;
         int specialization_info_total = 0;
         for (int i = 0; i < pipeline_shader_stage_create_info_size; ++i)
@@ -1585,27 +1367,32 @@ namespace Sammi
                 specialization_map_entry_size_total+= rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->mapEntryCount;
             }
         }
+
+        // 预分配特化常量相关内存
         std::vector<VkSpecializationInfo> vk_specialization_info_list(specialization_info_total);
         std::vector<VkSpecializationMapEntry> vk_specialization_map_entry_list(specialization_map_entry_size_total);
         int specialization_map_entry_current = 0;
         int specialization_info_current = 0;
 
+        // 转换每个着色器阶段信息
         for (int i = 0; i < pipeline_shader_stage_create_info_size; ++i)
         {
             const auto& rhi_pipeline_shader_stage_create_info_element = pCreateInfo->pStages[i];
             auto& vk_pipeline_shader_stage_create_info_element = vk_pipeline_shader_stage_create_info_list[i];
 
+            // 处理特化常量
             if (rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo != nullptr)
             {
                 vk_pipeline_shader_stage_create_info_element.pSpecializationInfo = &vk_specialization_info_list[specialization_info_current];
 
+                // 填充Vulkan特化信息结构
                 VkSpecializationInfo vk_specialization_info{};
                 vk_specialization_info.mapEntryCount = rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->mapEntryCount;
                 vk_specialization_info.pMapEntries = &vk_specialization_map_entry_list[specialization_map_entry_current];
                 vk_specialization_info.dataSize = rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->dataSize;
                 vk_specialization_info.pData = (const void*)rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->pData;
 
-                //specialization_map_entry
+                // 转换每个特化映射条目
                 for (int i = 0; i < rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->mapEntryCount; ++i)
                 {
                     const auto& rhi_specialization_map_entry_element = rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->pMapEntries[i];
@@ -1624,6 +1411,8 @@ namespace Sammi
             {
                 vk_pipeline_shader_stage_create_info_element.pSpecializationInfo = nullptr;
             }
+
+            // 转换公共着色器阶段属性
             vk_pipeline_shader_stage_create_info_element.sType = (VkStructureType)rhi_pipeline_shader_stage_create_info_element.sType;
             vk_pipeline_shader_stage_create_info_element.pNext = (const void*)rhi_pipeline_shader_stage_create_info_element.pNext;
             vk_pipeline_shader_stage_create_info_element.flags = (VkPipelineShaderStageCreateFlags)rhi_pipeline_shader_stage_create_info_element.flags;
@@ -1632,14 +1421,16 @@ namespace Sammi
             vk_pipeline_shader_stage_create_info_element.pName = rhi_pipeline_shader_stage_create_info_element.pName;
         };
 
+        // 验证特化常量转换完整性
         if (!((specialization_map_entry_size_total == specialization_map_entry_current)
             && (specialization_info_total == specialization_info_current)))
         {
-            LOG_ERROR("(specialization_map_entry_size_total == specialization_map_entry_current)&& (specialization_info_total == specialization_info_current)");
+            LOG_ERROR("Specialization constant conversion error");
             return false;
         }
 
-        //vertex_input_binding_description
+        // --- 2. 处理顶点输入状态 ---
+        // 顶点绑定描述转换
         int vertex_input_binding_description_size = pCreateInfo->pVertexInputState->vertexBindingDescriptionCount;
         std::vector<VkVertexInputBindingDescription> vk_vertex_input_binding_description_list(vertex_input_binding_description_size);
         for (int i = 0; i < vertex_input_binding_description_size; ++i)
@@ -1896,6 +1687,283 @@ namespace Sammi
         }
     }
 
+    bool VulkanRHI::createPipelineLayout(const RHIPipelineLayoutCreateInfo* pCreateInfo, RHIPipelineLayout*& pPipelineLayout)
+    {
+        //descriptor_set_layout
+        int descriptor_set_layout_size = pCreateInfo->setLayoutCount;
+        std::vector<VkDescriptorSetLayout> vk_descriptor_set_layout_list(descriptor_set_layout_size);
+        for (int i = 0; i < descriptor_set_layout_size; ++i)
+        {
+            const auto& rhi_descriptor_set_layout_element = pCreateInfo->pSetLayouts[i];
+            auto& vk_descriptor_set_layout_element = vk_descriptor_set_layout_list[i];
+
+            vk_descriptor_set_layout_element = ((VulkanDescriptorSetLayout*)rhi_descriptor_set_layout_element)->getResource();
+        };
+
+        VkPipelineLayoutCreateInfo create_info{};
+        create_info.sType = (VkStructureType)pCreateInfo->sType;
+        create_info.pNext = (const void*)pCreateInfo->pNext;
+        create_info.flags = (VkPipelineLayoutCreateFlags)pCreateInfo->flags;
+        create_info.setLayoutCount = pCreateInfo->setLayoutCount;
+        create_info.pSetLayouts = vk_descriptor_set_layout_list.data();
+
+        pPipelineLayout = new VulkanPipelineLayout();
+        VkPipelineLayout vk_pipeline_layout;
+        VkResult result = vkCreatePipelineLayout(m_device, &create_info, nullptr, &vk_pipeline_layout);
+        ((VulkanPipelineLayout*)pPipelineLayout)->setResource(vk_pipeline_layout);
+
+        if (result == VK_SUCCESS)
+        {
+            return RHI_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("vkCreatePipelineLayout failed!");
+            return false;
+        }
+    }
+
+    #pragma endregion
+
+    
+
+    void VulkanRHI::createCommandPool()
+    {
+        // default graphics command pool
+        {
+            m_rhi_command_pool = new VulkanCommandPool();
+            VkCommandPool vk_command_pool;
+            VkCommandPoolCreateInfo command_pool_create_info {};
+            command_pool_create_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            command_pool_create_info.pNext            = NULL;
+            command_pool_create_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            command_pool_create_info.queueFamilyIndex = m_queue_indices.graphics_family.value();
+
+            if (vkCreateCommandPool(m_device, &command_pool_create_info, nullptr, &vk_command_pool) != VK_SUCCESS)
+            {
+                LOG_ERROR("vk create command pool");
+            }
+
+            ((VulkanCommandPool*)m_rhi_command_pool)->setResource(vk_command_pool);
+        }
+
+        // other command pools
+        {
+            VkCommandPoolCreateInfo command_pool_create_info;
+            command_pool_create_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            command_pool_create_info.pNext            = NULL;
+            command_pool_create_info.flags            = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+            command_pool_create_info.queueFamilyIndex = m_queue_indices.graphics_family.value();
+
+            for (uint32_t i = 0; i < k_max_frames_in_flight; ++i)
+            {
+                if (vkCreateCommandPool(m_device, &command_pool_create_info, NULL, &m_command_pools[i]) != VK_SUCCESS)
+                {
+                    LOG_ERROR("vk create command pool");
+                }
+            }
+        }
+    }
+
+    bool VulkanRHI::createCommandPool(const RHICommandPoolCreateInfo* pCreateInfo, RHICommandPool* &pCommandPool)
+    {
+        VkCommandPoolCreateInfo create_info{};
+        create_info.sType = (VkStructureType)pCreateInfo->sType;
+        create_info.pNext = (const void*)pCreateInfo->pNext;
+        create_info.flags = (VkCommandPoolCreateFlags)pCreateInfo->flags;
+        create_info.queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+
+        pCommandPool = new VulkanCommandPool();
+        VkCommandPool vk_commandPool;
+        VkResult result = vkCreateCommandPool(m_device, &create_info, nullptr, &vk_commandPool);
+        ((VulkanCommandPool*)pCommandPool)->setResource(vk_commandPool);
+
+        if (result == VK_SUCCESS)
+        {
+            return RHI_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("vkCreateCommandPool is failed!");
+            return false;
+        }
+    }
+
+    bool VulkanRHI::createDescriptorPool(const RHIDescriptorPoolCreateInfo* pCreateInfo, RHIDescriptorPool* & pDescriptorPool)
+    {
+        int size = pCreateInfo->poolSizeCount;
+        std::vector<VkDescriptorPoolSize> descriptor_pool_size(size);
+        for (int i = 0; i < size; ++i)
+        {
+            const auto& rhi_desc = pCreateInfo->pPoolSizes[i];
+            auto& vk_desc = descriptor_pool_size[i];
+
+            vk_desc.type = (VkDescriptorType)rhi_desc.type;
+            vk_desc.descriptorCount = rhi_desc.descriptorCount;
+        };
+
+        VkDescriptorPoolCreateInfo create_info{};
+        create_info.sType = (VkStructureType)pCreateInfo->sType;
+        create_info.pNext = (const void*)pCreateInfo->pNext;
+        create_info.flags = (VkDescriptorPoolCreateFlags)pCreateInfo->flags;
+        create_info.maxSets = pCreateInfo->maxSets;
+        create_info.poolSizeCount = pCreateInfo->poolSizeCount;
+        create_info.pPoolSizes = descriptor_pool_size.data();
+
+        pDescriptorPool = new VulkanDescriptorPool();
+        VkDescriptorPool vk_descriptorPool;
+        VkResult result = vkCreateDescriptorPool(m_device, &create_info, nullptr, &vk_descriptorPool);
+        ((VulkanDescriptorPool*)pDescriptorPool)->setResource(vk_descriptorPool);
+
+        if (result == VK_SUCCESS)
+        {
+            return RHI_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("vkCreateDescriptorPool is failed!");
+            return false;
+        }
+    }
+
+    bool VulkanRHI::createDescriptorSetLayout(const RHIDescriptorSetLayoutCreateInfo* pCreateInfo, RHIDescriptorSetLayout* &pSetLayout)
+    {
+        //descriptor_set_layout_binding
+        int descriptor_set_layout_binding_size = pCreateInfo->bindingCount;
+        std::vector<VkDescriptorSetLayoutBinding> vk_descriptor_set_layout_binding_list(descriptor_set_layout_binding_size);
+
+        int sampler_count = 0;
+        for (int i = 0; i < descriptor_set_layout_binding_size; ++i)
+        {
+            const auto& rhi_descriptor_set_layout_binding_element = pCreateInfo->pBindings[i];
+            if (rhi_descriptor_set_layout_binding_element.pImmutableSamplers != nullptr)
+            {
+                sampler_count += rhi_descriptor_set_layout_binding_element.descriptorCount;
+            }
+        }
+        std::vector<VkSampler> sampler_list(sampler_count);
+        int sampler_current = 0;
+
+        for (int i = 0; i < descriptor_set_layout_binding_size; ++i)
+        {
+            const auto& rhi_descriptor_set_layout_binding_element = pCreateInfo->pBindings[i];
+            auto& vk_descriptor_set_layout_binding_element = vk_descriptor_set_layout_binding_list[i];
+
+            //sampler
+            vk_descriptor_set_layout_binding_element.pImmutableSamplers = nullptr;
+            if (rhi_descriptor_set_layout_binding_element.pImmutableSamplers)
+            {
+                vk_descriptor_set_layout_binding_element.pImmutableSamplers = &sampler_list[sampler_current];
+                for (int i = 0; i < rhi_descriptor_set_layout_binding_element.descriptorCount; ++i)
+                {
+                    const auto& rhi_sampler_element = rhi_descriptor_set_layout_binding_element.pImmutableSamplers[i];
+                    auto& vk_sampler_element = sampler_list[sampler_current];
+
+                    vk_sampler_element = ((VulkanSampler*)rhi_sampler_element)->getResource();
+
+                    sampler_current++;
+                };
+            }
+            vk_descriptor_set_layout_binding_element.binding = rhi_descriptor_set_layout_binding_element.binding;
+            vk_descriptor_set_layout_binding_element.descriptorType = (VkDescriptorType)rhi_descriptor_set_layout_binding_element.descriptorType;
+            vk_descriptor_set_layout_binding_element.descriptorCount = rhi_descriptor_set_layout_binding_element.descriptorCount;
+            vk_descriptor_set_layout_binding_element.stageFlags = rhi_descriptor_set_layout_binding_element.stageFlags;
+        };
+        
+        if (sampler_count != sampler_current)
+        {
+            LOG_ERROR("sampler_count != sampller_current");
+            return false;
+        }
+
+        VkDescriptorSetLayoutCreateInfo create_info{};
+        create_info.sType = (VkStructureType)pCreateInfo->sType;
+        create_info.pNext = (const void*)pCreateInfo->pNext;
+        create_info.flags = (VkDescriptorSetLayoutCreateFlags)pCreateInfo->flags;
+        create_info.bindingCount = pCreateInfo->bindingCount;
+        create_info.pBindings = vk_descriptor_set_layout_binding_list.data();
+
+        pSetLayout = new VulkanDescriptorSetLayout();
+        VkDescriptorSetLayout vk_descriptorSetLayout;
+        VkResult result = vkCreateDescriptorSetLayout(m_device, &create_info, nullptr, &vk_descriptorSetLayout);
+        ((VulkanDescriptorSetLayout*)pSetLayout)->setResource(vk_descriptorSetLayout);
+
+        if (result == VK_SUCCESS)
+        {
+            return RHI_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("vkCreateDescriptorSetLayout failed!");
+            return false;
+        }
+    }
+
+    bool VulkanRHI::createFence(const RHIFenceCreateInfo* pCreateInfo, RHIFence* &pFence)
+    {
+        VkFenceCreateInfo create_info{};
+        create_info.sType = (VkStructureType)pCreateInfo->sType;
+        create_info.pNext = (const void*)pCreateInfo->pNext;
+        create_info.flags = (VkFenceCreateFlags)pCreateInfo->flags;
+
+        pFence = new VulkanFence();
+        VkFence vk_fence;
+        VkResult result = vkCreateFence(m_device, &create_info, nullptr, &vk_fence);
+        ((VulkanFence*)pFence)->setResource(vk_fence);
+
+        if (result == VK_SUCCESS)
+        {
+            return RHI_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("vkCreateFence failed!");
+            return false;
+        }
+    }
+
+    bool VulkanRHI::createFramebuffer(const RHIFramebufferCreateInfo* pCreateInfo, RHIFramebuffer* &pFramebuffer)
+    {
+        //image_view
+        int image_view_size = pCreateInfo->attachmentCount;
+        std::vector<VkImageView> vk_image_view_list(image_view_size);
+        for (int i = 0; i < image_view_size; ++i)
+        {
+            const auto& rhi_image_view_element = pCreateInfo->pAttachments[i];
+            auto& vk_image_view_element = vk_image_view_list[i];
+
+            vk_image_view_element = ((VulkanImageView*)rhi_image_view_element)->getResource();
+        };
+
+        VkFramebufferCreateInfo create_info{};
+        create_info.sType = (VkStructureType)pCreateInfo->sType;
+        create_info.pNext = (const void*)pCreateInfo->pNext;
+        create_info.flags = (VkFramebufferCreateFlags)pCreateInfo->flags;
+        create_info.renderPass = ((VulkanRenderPass*)pCreateInfo->renderPass)->getResource();
+        create_info.attachmentCount = pCreateInfo->attachmentCount;
+        create_info.pAttachments = vk_image_view_list.data();
+        create_info.width = pCreateInfo->width;
+        create_info.height = pCreateInfo->height;
+        create_info.layers = pCreateInfo->layers;
+
+        pFramebuffer = new VulkanFramebuffer();
+        VkFramebuffer vk_framebuffer;
+        VkResult result = vkCreateFramebuffer(m_device, &create_info, nullptr, &vk_framebuffer);
+        ((VulkanFramebuffer*)pFramebuffer)->setResource(vk_framebuffer);
+
+        if (result == VK_SUCCESS)
+        {
+            return RHI_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("vkCreateFramebuffer failed!");
+            return false;
+        }
+    }
+
+    
+
     bool VulkanRHI::createComputePipelines(RHIPipelineCache* pipelineCache, uint32_t createInfoCount, const RHIComputePipelineCreateInfo* pCreateInfos, RHIPipeline*& pPipelines)
     {
         VkPipelineShaderStageCreateInfo shader_stage_create_info{};
@@ -1952,41 +2020,7 @@ namespace Sammi
         }
     }
 
-    bool VulkanRHI::createPipelineLayout(const RHIPipelineLayoutCreateInfo* pCreateInfo, RHIPipelineLayout* &pPipelineLayout)
-    {
-        //descriptor_set_layout
-        int descriptor_set_layout_size = pCreateInfo->setLayoutCount;
-        std::vector<VkDescriptorSetLayout> vk_descriptor_set_layout_list(descriptor_set_layout_size);
-        for (int i = 0; i < descriptor_set_layout_size; ++i)
-        {
-            const auto& rhi_descriptor_set_layout_element = pCreateInfo->pSetLayouts[i];
-            auto& vk_descriptor_set_layout_element = vk_descriptor_set_layout_list[i];
-
-            vk_descriptor_set_layout_element = ((VulkanDescriptorSetLayout*)rhi_descriptor_set_layout_element)->getResource();
-        };
-
-        VkPipelineLayoutCreateInfo create_info{};
-        create_info.sType = (VkStructureType)pCreateInfo->sType;
-        create_info.pNext = (const void*)pCreateInfo->pNext;
-        create_info.flags = (VkPipelineLayoutCreateFlags)pCreateInfo->flags;
-        create_info.setLayoutCount = pCreateInfo->setLayoutCount;
-        create_info.pSetLayouts = vk_descriptor_set_layout_list.data();
-
-        pPipelineLayout = new VulkanPipelineLayout();
-        VkPipelineLayout vk_pipeline_layout;
-        VkResult result = vkCreatePipelineLayout(m_device, &create_info, nullptr, &vk_pipeline_layout);
-        ((VulkanPipelineLayout*)pPipelineLayout)->setResource(vk_pipeline_layout);
-        
-        if (result == VK_SUCCESS)
-        {
-            return RHI_SUCCESS;
-        }
-        else
-        {
-            LOG_ERROR("vkCreatePipelineLayout failed!");
-            return false;
-        }
-    }
+    
 
     bool VulkanRHI::createRenderPass(const RHIRenderPassCreateInfo* pCreateInfo, RHIRenderPass* &pRenderPass)
     {
@@ -3258,16 +3292,7 @@ namespace Sammi
         }
     }
 
-    RHIShader* VulkanRHI::createShaderModule(const std::vector<unsigned char>& shader_code)
-    {
-        RHIShader* shahder = new VulkanShader();
-
-        VkShaderModule vk_shader =  VulkanUtil::createShaderModule(m_device, shader_code);
-
-        ((VulkanShader*)shahder)->setResource(vk_shader);
-
-        return shahder;
-    }
+    
 
     void VulkanRHI::createBuffer(RHIDeviceSize size, RHIBufferUsageFlags usage, RHIMemoryPropertyFlags properties, RHIBuffer* & buffer, RHIDeviceMemory* & buffer_memory)
     {

@@ -33,12 +33,11 @@ namespace Sammi
 
         // 2. 设置所有通道的公共信息
         RenderPassCommonInfo pass_common_info;
-        pass_common_info.rhi             = m_rhi;  // 渲染硬件接口
+        pass_common_info.rhi             = m_rhi;                      // 渲染硬件接口
         pass_common_info.render_resource = init_info.render_resource;  // 渲染资源管理器
 
         // 应用公共信息到所有通道
         m_point_light_shadow_pass->setCommonInfo(pass_common_info);
-        // ... (其他通道设置相同)
         m_directional_light_pass->setCommonInfo(pass_common_info);
         m_main_camera_pass->setCommonInfo(pass_common_info);
         m_tone_mapping_pass->setCommonInfo(pass_common_info);

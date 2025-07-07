@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/math/math_headers.h"
 
 #include <mutex>
 
-namespace Piccolo
+namespace Sammi
 {
     enum class RenderCameraType : int
     {
@@ -67,4 +67,4 @@ namespace Piccolo
     inline const Vector3 RenderCamera::Y = {0.0f, 1.0f, 0.0f};
     inline const Vector3 RenderCamera::Z = {0.0f, 0.0f, 1.0f};
 
-} // namespace Piccolo
+}

@@ -1164,7 +1164,11 @@ namespace Sammi
             glfwGetFramebufferSize(m_window, &width, &height);
 
             // 构造目标扩展（转换为 uint32_t）
-            VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+            VkExtent2D actualExtent = 
+            {
+                static_cast<uint32_t>(width),
+                static_cast<uint32_t>(height)
+            };
 
             /* 将尺寸约束在硬件支持的范围内
              * - 使用 std::clamp 确保宽度在 [min, max] 区间
@@ -1209,12 +1213,12 @@ namespace Sammi
         createInfo.surface = m_surface;  // 关联的Vulkan表面
 
         // 设置核心参数
-        createInfo.minImageCount = image_count;  // 交换链图像数量
-        createInfo.imageFormat = chosen_surface_format.format;  // 图像格式
+        createInfo.minImageCount = image_count;                         // 交换链图像数量
+        createInfo.imageFormat = chosen_surface_format.format;          // 图像格式
         createInfo.imageColorSpace = chosen_surface_format.colorSpace;  // 色彩空间
-        createInfo.imageExtent = chosen_extent;  // 图像分辨率
-        createInfo.imageArrayLayers = 1;  // 始终为1（非立体渲染）
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // 作为颜色附件使用
+        createInfo.imageExtent = chosen_extent;                         // 图像分辨率
+        createInfo.imageArrayLayers = 1;                                // 始终为1（非立体渲染）
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;    // 作为颜色附件使用
 
         // 获取图形队列和呈现队列的家族索引
         uint32_t queueFamilyIndices[] =
@@ -1252,7 +1256,7 @@ namespace Sammi
         // 创建交换链
         if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain) != VK_SUCCESS)
         {
-            LOG_ERROR("vk create swapchain khr");
+            LOG_ERROR("Failed to create swapChain!");
         }
 
         // 获取交换链中的实际VkImage对象
@@ -1267,6 +1271,33 @@ namespace Sammi
 
         // 初始化裁剪区域（默认为整个交换链范围）
         m_scissor = { {0, 0}, {m_swapchain_extent.width, m_swapchain_extent.height} };
+    }
+
+    void VulkanRHI::createSwapchainImageViews()
+    {
+        // 确保图像视图容器大小与交换链图像数量匹配
+        m_swapchain_imageviews.resize(m_swapchain_images.size());
+
+        // 遍历交换链中的所有图像，为每个图像创建对应的图像视图
+        for (size_t i = 0; i < m_swapchain_images.size(); i++)
+        {
+            VkImageView vk_image_view;
+
+            // 使用工具函数创建Vulkan图像视图
+            vk_image_view = VulkanUtil::createImageView(m_device,                   // Vulkan逻辑设备
+                                                        m_swapchain_images[i],      // 当前处理的交换链图像
+                                              (VkFormat)m_swapchain_image_format,   // 交换链使用的图像格式
+                                                        VK_IMAGE_ASPECT_COLOR_BIT,  // 指定视图访问颜色通道
+                                                        VK_IMAGE_VIEW_TYPE_2D,      // 视图类型为2D图像
+                                                        1,                          // MIP层级为1（无多级纹理）
+                                                        1);                         // 图层数为1（无纹理数组）
+
+            // 创建自定义的VulkanImageView对象
+            m_swapchain_imageviews[i] = new VulkanImageView();
+
+            // 将底层VkImageView句柄存储到自定义对象中
+            ((VulkanImageView*)m_swapchain_imageviews[i])->setResource(vk_image_view);
+        }
     }
 
     void VulkanRHI::clearSwapchain()
@@ -3383,25 +3414,7 @@ namespace Sammi
         ((VulkanImageView*)image_view)->setResource(vk_image_view);
     }
 
-    void VulkanRHI::createSwapchainImageViews()
-    {
-        m_swapchain_imageviews.resize(m_swapchain_images.size());
-
-        // create imageview (one for each this time) for all swapchain images
-        for (size_t i = 0; i < m_swapchain_images.size(); i++)
-        {
-            VkImageView vk_image_view;
-            vk_image_view = VulkanUtil::createImageView(m_device,
-                                                                   m_swapchain_images[i],
-                                                                   (VkFormat)m_swapchain_image_format,
-                                                                   VK_IMAGE_ASPECT_COLOR_BIT,
-                                                                   VK_IMAGE_VIEW_TYPE_2D,
-                                                                   1,
-                                                                   1);
-            m_swapchain_imageviews[i] = new VulkanImageView();
-            ((VulkanImageView*)m_swapchain_imageviews[i])->setResource(vk_image_view);
-        }
-    }
+    
 
     void VulkanRHI::createAssetAllocator()
     {
@@ -3736,11 +3749,11 @@ namespace Sammi
     {
         return m_command_buffers;
     }
-    RHICommandPool* VulkanRHI::getCommandPoor() const
+    RHICommandPool* VulkanRHI::getCommandPool() const
     {
         return m_rhi_command_pool;
     }
-    RHIDescriptorPool* VulkanRHI::getDescriptorPoor() const
+    RHIDescriptorPool* VulkanRHI::getDescriptorPool() const
     {
         return m_descriptor_pool;
     }

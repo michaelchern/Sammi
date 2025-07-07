@@ -237,34 +237,66 @@ namespace Sammi
         vkBindImageMemory(device, image, memory, 0);
     }
 
-    VkImageView VulkanUtil::createImageView(VkDevice           device,
-                                            VkImage&           image,
-                                            VkFormat           format,
-                                            VkImageAspectFlags image_aspect_flags,
-                                            VkImageViewType    view_type,
-                                            uint32_t           layout_count,
-                                            uint32_t           miplevels)
-    {
-        VkImageViewCreateInfo image_view_create_info {};
-        image_view_create_info.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        image_view_create_info.image                           = image;
-        image_view_create_info.viewType                        = view_type;
-        image_view_create_info.format                          = format;
-        image_view_create_info.subresourceRange.aspectMask     = image_aspect_flags;
-        image_view_create_info.subresourceRange.baseMipLevel   = 0;
-        image_view_create_info.subresourceRange.levelCount     = miplevels;
-        image_view_create_info.subresourceRange.baseArrayLayer = 0;
-        image_view_create_info.subresourceRange.layerCount     = layout_count;
+    #pragma region 4-SwapChain
 
+
+    /**
+     * 创建 Vulkan 图像视图 (ImageView)
+     *
+     * @param device Vulkan 逻辑设备句柄
+     * @param image 要创建视图的源图像（需注意此处使用非常量引用）
+     * @param format 图像视图使用的像素格式
+     * @param image_aspect_flags 指定图像视图的用途（颜色/深度/模板等）
+     * @param view_type 图像视图类型（1D/2D/3D/立方体贴图等）
+     * @param layout_count 图像数组层数量（用于纹理数组）
+     * @param miplevels 包含的Mipmap层级数量
+     * @return 成功返回 VkImageView 句柄，失败返回未初始化的 VkImageView
+     */
+    VkImageView VulkanUtil::createImageView(VkDevice           device,
+                                            VkImage&           image,               // 输入输出参数：注意这里使用了非常量引用
+                                            VkFormat           format,
+                                            VkImageAspectFlags image_aspect_flags,  
+                                            VkImageViewType    view_type,
+                                            uint32_t           layout_count,        // 纹理数组层数（通常为1）
+                                            uint32_t           miplevels)           // Mipmap层级数（通常为1）
+    {
+        // 创建图像视图的信息结构体
+        VkImageViewCreateInfo image_view_create_info {};
+        image_view_create_info.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;  // 结构体类型
+        image_view_create_info.image                           = image;                                     // 目标图像资源
+        image_view_create_info.viewType                        = view_type;                                 // 视图类型
+        image_view_create_info.format                          = format;                                    // 图像数据格式
+        
+        // 配置子资源范围（定义视图如何访问图像数据）
+        image_view_create_info.subresourceRange.aspectMask     = image_aspect_flags;                        // 图像用途掩码
+        image_view_create_info.subresourceRange.baseMipLevel   = 0;                                         // 起始Mip层级
+        image_view_create_info.subresourceRange.levelCount     = miplevels;                                 // Mip层级总数
+        image_view_create_info.subresourceRange.baseArrayLayer = 0;                                         // 起始数组层
+        image_view_create_info.subresourceRange.layerCount     = layout_count;                              // 数组层总数
+
+        // 实际创建图像视图
         VkImageView image_view;
-        if (vkCreateImageView(device, &image_view_create_info, nullptr, &image_view) != VK_SUCCESS)
+
+        VkResult result = vkCreateImageView(device,                  // 逻辑设备
+                                           &image_view_create_info,  // 创建信息
+                                            nullptr,                 // 自定义分配器（默认）
+                                           &image_view);             // 输出参数：图像视图句柄
+
+        // 检查创建结果
+        if (result != VK_SUCCESS)
         {
+            /* 错误处理待完善 */
+            // 注意：创建失败时返回的 image_view 是未初始化的！
+            // 实际应处理错误（如返回 VK_NULL_HANDLE 或抛出异常）
             return image_view;
-            // todo
         }
 
-        return image_view;
+        return image_view;  // 返回成功创建的图像视图
     }
+
+    #pragma endregion
+
+
 
     void VulkanUtil::createGlobalImage(RHI*               rhi,
                                        VkImage&           image,

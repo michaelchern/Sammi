@@ -274,11 +274,43 @@ namespace Sammi
         RHIQueue* m_compute_queue{ nullptr };  // 计算队列
 
         // 交换链属性
-        RHIFormat m_swapchain_image_format{ RHI_FORMAT_UNDEFINED };  // 交换链图像格式
-        std::vector<RHIImageView*> m_swapchain_imageviews;      // 交换链图像视图
-        RHIExtent2D m_swapchain_extent;                        // 交换链尺寸
+        
+        
+        
         RHIViewport m_viewport;                                // 视口设置
+        
+
+
+        #pragma region 1-Instance
+
+        VkInstance m_instance{ nullptr };
+
+        #pragma endregion
+
+
+
+
+
+        #pragma region 3-WindowSurface
+
+        VkSurfaceKHR m_surface{ nullptr };
+
+        #pragma endregion
+
+
+
+        #pragma region 4-SwapChain
+
+        VkSwapchainKHR           m_swapchain{ nullptr };
+        std::vector<VkImage>     m_swapchain_images;
+        RHIFormat m_swapchain_image_format{ RHI_FORMAT_UNDEFINED };  // 交换链图像格式
+        RHIExtent2D m_swapchain_extent;                        // 交换链尺寸
         RHIRect2D m_scissor;                                    // 裁剪区域
+        std::vector<RHIImageView*> m_swapchain_imageviews;      // 交换链图像视图
+
+
+        #pragma endregion
+
 
         // 深度缓冲属性
         RHIFormat m_depth_image_format{ RHI_FORMAT_UNDEFINED };   // 深度图像格式
@@ -297,14 +329,13 @@ namespace Sammi
         QueueFamilyIndices m_queue_indices;
 
         GLFWwindow*        m_window {nullptr};
-        VkInstance         m_instance {nullptr};
-        VkSurfaceKHR       m_surface {nullptr};
+        
+        
         VkPhysicalDevice   m_physical_device {nullptr};
         VkDevice           m_device {nullptr};
         VkQueue            m_present_queue {nullptr};
 
-        VkSwapchainKHR           m_swapchain {nullptr};
-        std::vector<VkImage>     m_swapchain_images;
+        
 
         RHIImage*        m_depth_image = new VulkanImage();
         VkDeviceMemory m_depth_image_memory {nullptr};

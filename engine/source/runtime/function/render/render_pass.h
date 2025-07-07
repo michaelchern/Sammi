@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/function/render/render_common.h"
 #include "runtime/function/render/render_pass_base.h"
@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     class VulkanRHI;
 
@@ -102,4 +102,4 @@ namespace Piccolo
 
     private:
     };
-} // namespace Piccolo
+}

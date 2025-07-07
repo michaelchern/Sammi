@@ -1,8 +1,8 @@
-#include "runtime/function/render/render_helper.h"
+﻿#include "runtime/function/render/render_helper.h"
 #include "runtime/function/render/render_camera.h"
 #include "runtime/function/render/render_scene.h"
 
-namespace Piccolo
+namespace Sammi
 {
     ClusterFrustum CreateClusterFrustumFromMatrix(Matrix4x4 mat,
                                                   float     x_left,
@@ -347,4 +347,4 @@ namespace Piccolo
         Matrix4x4 light_proj_view = (light_proj * light_view);
         return light_proj_view;
     }
-} // namespace Piccolo
+}

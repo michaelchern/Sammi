@@ -1345,154 +1345,228 @@ namespace Sammi
         return shahder;  // 返回封装好的着色器对象
     }
 
+    /**
+     * @brief 创建Vulkan图形管线（Graphics Pipeline）
+     *
+     * 该函数根据输入的图形管线创建信息，将RHI（渲染硬件接口）层的抽象描述转换为Vulkan API所需的底层结构，
+     * 并调用Vulkan API创建实际的图形管线对象。支持批量创建多个管线（通过createInfoCount指定数量）。
+     *
+     * @param pipelineCache 可选的管线缓存对象指针，用于加速管线创建（若提供则使用缓存，否则不使用）
+     * @param createInfoCount 要创建的管线数量
+     * @param pCreateInfo 指向管线创建信息数组的指针，每个元素描述一个管线的具体配置（着色器、顶点输入、状态等）
+     * @param pPipelines 输出参数，存储创建成功的管线对象数组（需外部释放）
+     * @return RHI_SUCCESS表示成功，否则表示失败（如Vulkan API调用失败或参数错误）
+     */
     bool VulkanRHI::createGraphicsPipelines(RHIPipelineCache* pipelineCache,             // 管线缓存对象指针 (可选)
                                             uint32_t createInfoCount,                    // 要创建的管线数量
                                       const RHIGraphicsPipelineCreateInfo* pCreateInfo,  // 管线创建信息数组
                                             RHIPipeline* &pPipelines)                    // 输出参数：创建的管线对象
     {
-        // --- 1. 处理着色器阶段信息 ---
-        // 获取着色器阶段数量并创建Vulkan结构体数组
+        // ------------------------------- 1. 处理着色器阶段信息 -------------------------------
+        // 获取着色器阶段数量（来自创建信息的stageCount字段）
         int pipeline_shader_stage_create_info_size = pCreateInfo->stageCount;
+        // 预分配Vulkan着色器阶段创建信息数组（大小为阶段数量）
         std::vector<VkPipelineShaderStageCreateInfo> vk_pipeline_shader_stage_create_info_list(pipeline_shader_stage_create_info_size);
 
-        // 预计算特化常量的总数量（优化内存分配）
+        // -------------------------- 预计算特化常量内存需求 --------------------------
+        // 统计所有着色器阶段中特化常量映射条目的总数量（用于预分配内存）
         int specialization_map_entry_size_total = 0;
+        // 统计需要特化常量的着色器阶段总数（每个阶段最多一个特化信息）
         int specialization_info_total = 0;
         for (int i = 0; i < pipeline_shader_stage_create_info_size; ++i)
         {
             const auto& rhi_pipeline_shader_stage_create_info_element = pCreateInfo->pStages[i];
+            // 若当前阶段包含特化常量信息
             if (rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo != nullptr)
             {
-                specialization_info_total++;
+                specialization_info_total++;  // 特化阶段计数+1
+                // 累加该阶段的特化映射条目数量（每个条目描述一个常量的位置和大小）
                 specialization_map_entry_size_total+= rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->mapEntryCount;
             }
         }
 
-        // 预分配特化常量相关内存
+        // ------------------- 预分配特化常量相关内存 -------------------
+        // 预分配Vulkan特化信息结构体数组（大小为需要特化的阶段数）
         std::vector<VkSpecializationInfo> vk_specialization_info_list(specialization_info_total);
+        // 预分配特化映射条目数组（大小为总映射条目数）
         std::vector<VkSpecializationMapEntry> vk_specialization_map_entry_list(specialization_map_entry_size_total);
+        // 当前已填充的映射条目索引（用于跟踪内存填充位置）
         int specialization_map_entry_current = 0;
+        // 当前已填充的特化信息索引（用于跟踪内存填充位置）
         int specialization_info_current = 0;
 
-        // 转换每个着色器阶段信息
+        // ---------------------- 转换每个着色器阶段信息 ----------------------
         for (int i = 0; i < pipeline_shader_stage_create_info_size; ++i)
         {
+            // 获取当前RHI着色器阶段信息
             const auto& rhi_pipeline_shader_stage_create_info_element = pCreateInfo->pStages[i];
+            // 获取当前Vulkan着色器阶段信息（指向预分配数组的对应位置）
             auto& vk_pipeline_shader_stage_create_info_element = vk_pipeline_shader_stage_create_info_list[i];
 
-            // 处理特化常量
+            // -------------------- 处理特化常量（若存在） --------------------
             if (rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo != nullptr)
             {
+                // 将当前Vulkan阶段信息的特化常量指针指向预分配数组的当前位置
                 vk_pipeline_shader_stage_create_info_element.pSpecializationInfo = &vk_specialization_info_list[specialization_info_current];
 
-                // 填充Vulkan特化信息结构
+                // 填充Vulkan特化信息结构体
                 VkSpecializationInfo vk_specialization_info{};
+                // 映射条目数量（来自RHI特化信息）
                 vk_specialization_info.mapEntryCount = rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->mapEntryCount;
+                // 映射条目数组指针（指向预分配的映射条目数组的当前位置）
                 vk_specialization_info.pMapEntries = &vk_specialization_map_entry_list[specialization_map_entry_current];
+                // 特化数据大小（来自RHI特化信息）
                 vk_specialization_info.dataSize = rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->dataSize;
+                // 特化数据指针（来自RHI特化信息）
                 vk_specialization_info.pData = (const void*)rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->pData;
 
-                // 转换每个特化映射条目
+                // ------------------- 转换每个特化映射条目 -------------------
+                // 遍历当前阶段的所有特化映射条目（来自RHI）
                 for (int i = 0; i < rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->mapEntryCount; ++i)
                 {
+                    // 获取当前RHI映射条目
                     const auto& rhi_specialization_map_entry_element = rhi_pipeline_shader_stage_create_info_element.pSpecializationInfo->pMapEntries[i];
+                    // 获取当前Vulkan映射条目（指向预分配数组的当前位置）
                     auto& vk_specialization_map_entry_element = vk_specialization_map_entry_list[specialization_map_entry_current];
 
+                    // 填充映射条目字段：
+                    // - constantID：着色器中常量的唯一标识符（对应SPIR-V中的SpecId）
+                    // - offset：特化数据在pData中的偏移量
+                    // - size：该常量在数据中的字节大小
                     vk_specialization_map_entry_element.constantID = rhi_specialization_map_entry_element->constantID;
                     vk_specialization_map_entry_element.offset = rhi_specialization_map_entry_element->offset;
                     vk_specialization_map_entry_element.size = rhi_specialization_map_entry_element->size;
 
-                    specialization_map_entry_current++;
+                    specialization_map_entry_current++;  // 映射条目索引递增
                 };
 
-                specialization_info_current++;
+                specialization_info_current++;  // 特化信息索引递增
             }
             else
             {
+                // 若当前阶段无特化常量，特化信息指针置空
                 vk_pipeline_shader_stage_create_info_element.pSpecializationInfo = nullptr;
             }
 
-            // 转换公共着色器阶段属性
+            // -------------------- 转换公共着色器阶段属性 --------------------
+            // 填充Vulkan着色器阶段创建信息的通用字段（类型转换为主）：
             vk_pipeline_shader_stage_create_info_element.sType = (VkStructureType)rhi_pipeline_shader_stage_create_info_element.sType;
             vk_pipeline_shader_stage_create_info_element.pNext = (const void*)rhi_pipeline_shader_stage_create_info_element.pNext;
             vk_pipeline_shader_stage_create_info_element.flags = (VkPipelineShaderStageCreateFlags)rhi_pipeline_shader_stage_create_info_element.flags;
             vk_pipeline_shader_stage_create_info_element.stage = (VkShaderStageFlagBits)rhi_pipeline_shader_stage_create_info_element.stage;
+            // 获取Vulkan着色器模块句柄（从RHI封装的VulkanShader对象中获取）
             vk_pipeline_shader_stage_create_info_element.module = ((VulkanShader*)rhi_pipeline_shader_stage_create_info_element.module)->getResource();
+            // 着色器入口点名称（如"main"）
             vk_pipeline_shader_stage_create_info_element.pName = rhi_pipeline_shader_stage_create_info_element.pName;
         };
 
-        // 验证特化常量转换完整性
+        // ------------------- 验证特化常量转换完整性 -------------------
+        // 检查预分配的内存是否完全填充（避免因逻辑错误导致内存未填满）
         if (!((specialization_map_entry_size_total == specialization_map_entry_current)
             && (specialization_info_total == specialization_info_current)))
         {
-            LOG_ERROR("Specialization constant conversion error");
+            LOG_ERROR("Specialization constant conversion error!");
             return false;
         }
 
-        // --- 2. 处理顶点输入状态 ---
-        // 顶点绑定描述转换
+        // ------------------------------- 2. 处理顶点输入状态 -------------------------------
+        // -------------------- 顶点绑定描述（Vertex Binding Descriptions） --------------------
+        // 获取顶点绑定描述数量（来自创建信息的顶点输入状态）
         int vertex_input_binding_description_size = pCreateInfo->pVertexInputState->vertexBindingDescriptionCount;
+        // 预分配Vulkan顶点绑定描述数组
         std::vector<VkVertexInputBindingDescription> vk_vertex_input_binding_description_list(vertex_input_binding_description_size);
+        // 遍历转换每个绑定描述：
         for (int i = 0; i < vertex_input_binding_description_size; ++i)
         {
             const auto& rhi_vertex_input_binding_description_element = pCreateInfo->pVertexInputState->pVertexBindingDescriptions[i];
             auto& vk_vertex_input_binding_description_element = vk_vertex_input_binding_description_list[i];
 
+            // 填充字段：
+            // - binding：绑定的顶点缓冲槽位（0,1,...）
+            // - stride：每个顶点的字节大小（相邻顶点间的字节偏移）
+            // - inputRate：顶点数据更新频率（VERTEX：每个顶点更新；INSTANCE：每个实例更新）
             vk_vertex_input_binding_description_element.binding = rhi_vertex_input_binding_description_element.binding;
             vk_vertex_input_binding_description_element.stride = rhi_vertex_input_binding_description_element.stride;
             vk_vertex_input_binding_description_element.inputRate = (VkVertexInputRate)rhi_vertex_input_binding_description_element.inputRate;
         };
 
-        //vertex_input_attribute_description
+        // -------------------- 顶点属性描述（Vertex Attribute Descriptions） --------------------
+        // 获取顶点属性描述数量（来自创建信息的顶点输入状态）
         int vertex_input_attribute_description_size = pCreateInfo->pVertexInputState->vertexAttributeDescriptionCount;
+        // 预分配Vulkan顶点属性描述数组
         std::vector<VkVertexInputAttributeDescription> vk_vertex_input_attribute_description_list(vertex_input_attribute_description_size);
+        // 遍历转换每个属性描述：
         for (int i = 0; i < vertex_input_attribute_description_size; ++i)
         {
             const auto& rhi_vertex_input_attribute_description_element = pCreateInfo->pVertexInputState->pVertexAttributeDescriptions[i];
             auto& vk_vertex_input_attribute_description_element = vk_vertex_input_attribute_description_list[i];
 
+            // 填充字段：
+            // - location：着色器中输入变量的位置（对应location限定符）
+            // - binding：绑定的顶点缓冲槽位（与绑定描述中的binding对应）
+            // - format：顶点属性的数据格式（如VK_FORMAT_R32G32B32_SFLOAT）
+            // - offset：属性在顶点数据中的字节偏移（相对于绑定起始位置）
             vk_vertex_input_attribute_description_element.location = rhi_vertex_input_attribute_description_element.location;
             vk_vertex_input_attribute_description_element.binding = rhi_vertex_input_attribute_description_element.binding;
             vk_vertex_input_attribute_description_element.format = (VkFormat)rhi_vertex_input_attribute_description_element.format;
             vk_vertex_input_attribute_description_element.offset = rhi_vertex_input_attribute_description_element.offset;
         };
 
+        // -------------------- 填充顶点输入状态创建信息 --------------------
         VkPipelineVertexInputStateCreateInfo vk_pipeline_vertex_input_state_create_info{};
         vk_pipeline_vertex_input_state_create_info.sType = (VkStructureType)pCreateInfo->pVertexInputState->sType;
         vk_pipeline_vertex_input_state_create_info.pNext = (const void*)pCreateInfo->pVertexInputState->pNext;
         vk_pipeline_vertex_input_state_create_info.flags = (VkPipelineVertexInputStateCreateFlags)pCreateInfo->pVertexInputState->flags;
+        // 绑定描述数量及指针（指向预分配的绑定描述数组）
         vk_pipeline_vertex_input_state_create_info.vertexBindingDescriptionCount = pCreateInfo->pVertexInputState->vertexBindingDescriptionCount;
         vk_pipeline_vertex_input_state_create_info.pVertexBindingDescriptions = vk_vertex_input_binding_description_list.data();
+        // 属性描述数量及指针（指向预分配的属性描述数组）
         vk_pipeline_vertex_input_state_create_info.vertexAttributeDescriptionCount = pCreateInfo->pVertexInputState->vertexAttributeDescriptionCount;
         vk_pipeline_vertex_input_state_create_info.pVertexAttributeDescriptions = vk_vertex_input_attribute_description_list.data();
 
+        // ------------------------- 输入装配状态（Input Assembly） -------------------------
         VkPipelineInputAssemblyStateCreateInfo vk_pipeline_input_assembly_state_create_info{};
         vk_pipeline_input_assembly_state_create_info.sType = (VkStructureType)pCreateInfo->pInputAssemblyState->sType;
         vk_pipeline_input_assembly_state_create_info.pNext = (const void*)pCreateInfo->pInputAssemblyState->pNext;
         vk_pipeline_input_assembly_state_create_info.flags = (VkPipelineInputAssemblyStateCreateFlags)pCreateInfo->pInputAssemblyState->flags;
+        // 图元拓扑类型（如VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST）
         vk_pipeline_input_assembly_state_create_info.topology = (VkPrimitiveTopology)pCreateInfo->pInputAssemblyState->topology;
+        // 是否启用图元重启（仅对线条/三角形带有效）
         vk_pipeline_input_assembly_state_create_info.primitiveRestartEnable = (VkBool32)pCreateInfo->pInputAssemblyState->primitiveRestartEnable;
 
+        // ------------------------ 曲面细分状态（Tessellation） ------------------------
+        // 若创建信息包含曲面细分状态（非空指针）
         const VkPipelineTessellationStateCreateInfo* vk_pipeline_tessellation_state_create_info_ptr = nullptr;
         VkPipelineTessellationStateCreateInfo vk_pipeline_tessellation_state_create_info{};
         if (pCreateInfo->pTessellationState != nullptr)
         {
+            // 填充Vulkan曲面细分状态创建信息
             vk_pipeline_tessellation_state_create_info.sType = (VkStructureType)pCreateInfo->pTessellationState->sType;
             vk_pipeline_tessellation_state_create_info.pNext = (const void*)pCreateInfo->pTessellationState->pNext;
             vk_pipeline_tessellation_state_create_info.flags = (VkPipelineTessellationStateCreateFlags)pCreateInfo->pTessellationState->flags;
+            // 细分控制着色器输出的补丁控制点数量（决定每个图元被细分的程度）
             vk_pipeline_tessellation_state_create_info.patchControlPoints = pCreateInfo->pTessellationState->patchControlPoints;
 
+            // 保存指针供后续主创建信息使用
             vk_pipeline_tessellation_state_create_info_ptr = &vk_pipeline_tessellation_state_create_info;
         }
 
-        //viewport
+        // ------------------------- 视口状态（Viewport） -------------------------
+        // -------------------- 视口（Viewport）转换 --------------------
+        // 获取视口数量（来自创建信息的视口状态）
         int viewport_size = pCreateInfo->pViewportState->viewportCount;
+        // 预分配Vulkan视口数组
         std::vector<VkViewport> vk_viewport_list(viewport_size);
+        // 遍历转换每个视口：
         for (int i = 0; i < viewport_size; ++i)
         {
             const auto& rhi_viewport_element = pCreateInfo->pViewportState->pViewports[i];
             auto& vk_viewport_element = vk_viewport_list[i];
 
+            // 填充字段：
+            // - x,y：视口左下角在裁剪空间的坐标（NDC坐标系）
+            // - width,height：视口的宽度和高度（NDC坐标系）
+            // - minDepth,maxDepth：深度测试的最小/最大范围（通常[0,1]）
             vk_viewport_element.x = rhi_viewport_element.x;
             vk_viewport_element.y = rhi_viewport_element.y;
             vk_viewport_element.width = rhi_viewport_element.width;
@@ -1501,61 +1575,90 @@ namespace Sammi
             vk_viewport_element.maxDepth = rhi_viewport_element.maxDepth;
         };
 
-        //rect_2d
+        // -------------------- 剪裁矩形（Scissor）转换 --------------------
+        // 获取剪裁矩形数量（来自创建信息的视口状态）
         int rect_2d_size = pCreateInfo->pViewportState->scissorCount;
+        // 预分配Vulkan剪裁矩形数组（每个矩形由偏移和范围组成）
         std::vector<VkRect2D> vk_rect_2d_list(rect_2d_size);
+        // 遍历转换每个剪裁矩形：
         for (int i = 0; i < rect_2d_size; ++i)
         {
             const auto& rhi_rect_2d_element = pCreateInfo->pViewportState->pScissors[i];
             auto& vk_rect_2d_element = vk_rect_2d_list[i];
 
+            // 转换偏移量（从RHI的向量转换为Vulkan的Offset2D）
             VkOffset2D offset2d{};
             offset2d.x = rhi_rect_2d_element.offset.x;
             offset2d.y = rhi_rect_2d_element.offset.y;
 
+            // 转换范围（从RHI的扩展转换为Vulkan的Extent2D）
             VkExtent2D extend2d{};
             extend2d.width = rhi_rect_2d_element.extent.width;
             extend2d.height = rhi_rect_2d_element.extent.height;
 
+            // 填充剪裁矩形
             vk_rect_2d_element.offset = offset2d;
             vk_rect_2d_element.extent = extend2d;
         };
 
+        // -------------------- 填充视口状态创建信息 --------------------
         VkPipelineViewportStateCreateInfo vk_pipeline_viewport_state_create_info{};
         vk_pipeline_viewport_state_create_info.sType = (VkStructureType)pCreateInfo->pViewportState->sType;
         vk_pipeline_viewport_state_create_info.pNext = (const void*)pCreateInfo->pViewportState->pNext;
         vk_pipeline_viewport_state_create_info.flags = (VkPipelineViewportStateCreateFlags)pCreateInfo->pViewportState->flags;
+        // 视口数量及指针（指向预分配的视口数组）
         vk_pipeline_viewport_state_create_info.viewportCount = pCreateInfo->pViewportState->viewportCount;
         vk_pipeline_viewport_state_create_info.pViewports = vk_viewport_list.data();
+        // 剪裁矩形数量及指针（指向预分配的剪裁矩形数组）
         vk_pipeline_viewport_state_create_info.scissorCount = pCreateInfo->pViewportState->scissorCount;
         vk_pipeline_viewport_state_create_info.pScissors = vk_rect_2d_list.data();
 
+        // --------------------- 光栅化状态（Rasterization） ---------------------
         VkPipelineRasterizationStateCreateInfo vk_pipeline_rasterization_state_create_info{};
         vk_pipeline_rasterization_state_create_info.sType = (VkStructureType)pCreateInfo->pRasterizationState->sType;
         vk_pipeline_rasterization_state_create_info.pNext = (const void*)pCreateInfo->pRasterizationState->pNext;
         vk_pipeline_rasterization_state_create_info.flags = (VkPipelineRasterizationStateCreateFlags)pCreateInfo->pRasterizationState->flags;
+        // 是否启用深度裁剪（超出[Near,Far]范围的片段被丢弃）
         vk_pipeline_rasterization_state_create_info.depthClampEnable = (VkBool32)pCreateInfo->pRasterizationState->depthClampEnable;
+        // 是否禁用光栅化（直接输出顶点数据到帧缓冲，用于计算着色器等）
         vk_pipeline_rasterization_state_create_info.rasterizerDiscardEnable = (VkBool32)pCreateInfo->pRasterizationState->rasterizerDiscardEnable;
+        // 多边形模式（填充、线框、点）
         vk_pipeline_rasterization_state_create_info.polygonMode = (VkPolygonMode)pCreateInfo->pRasterizationState->polygonMode;
+        // 裁剪面（正面/背面/无）
         vk_pipeline_rasterization_state_create_info.cullMode = (VkCullModeFlags)pCreateInfo->pRasterizationState->cullMode;
+        // 正面顶点顺序（顺时针/逆时针）
         vk_pipeline_rasterization_state_create_info.frontFace = (VkFrontFace)pCreateInfo->pRasterizationState->frontFace;
+        // 是否启用深度偏移（解决深度冲突）
         vk_pipeline_rasterization_state_create_info.depthBiasEnable = (VkBool32)pCreateInfo->pRasterizationState->depthBiasEnable;
+        // 深度偏移常数因子（影响偏移量大小）
         vk_pipeline_rasterization_state_create_info.depthBiasConstantFactor = pCreateInfo->pRasterizationState->depthBiasConstantFactor;
+        // 深度偏移clamp值（限制最大偏移量）
         vk_pipeline_rasterization_state_create_info.depthBiasClamp = pCreateInfo->pRasterizationState->depthBiasClamp;
+        // 深度偏移斜率因子（与深度梯度相乘，影响偏移量）
         vk_pipeline_rasterization_state_create_info.depthBiasSlopeFactor = pCreateInfo->pRasterizationState->depthBiasSlopeFactor;
+        // 线宽（仅在支持宽线扩展时有效）
         vk_pipeline_rasterization_state_create_info.lineWidth = pCreateInfo->pRasterizationState->lineWidth;
 
+        // ---------------------- 多重采样状态（Multisample） ----------------------
         VkPipelineMultisampleStateCreateInfo vk_pipeline_multisample_state_create_info{};
         vk_pipeline_multisample_state_create_info.sType = (VkStructureType)pCreateInfo->pMultisampleState->sType;
         vk_pipeline_multisample_state_create_info.pNext = (const void*)pCreateInfo->pMultisampleState->pNext;
         vk_pipeline_multisample_state_create_info.flags = (VkPipelineMultisampleStateCreateFlags)pCreateInfo->pMultisampleState->flags;
+        // 光栅化样本数（如VK_SAMPLE_COUNT_1_BIT表示单采样）
         vk_pipeline_multisample_state_create_info.rasterizationSamples = (VkSampleCountFlagBits)pCreateInfo->pMultisampleState->rasterizationSamples;
+        // 是否启用样本着色（每个样本单独计算着色）
         vk_pipeline_multisample_state_create_info.sampleShadingEnable = (VkBool32)pCreateInfo->pMultisampleState->sampleShadingEnable;
+        // 样本着色的最小比例（0.0表示仅主样本着色）
         vk_pipeline_multisample_state_create_info.minSampleShading = pCreateInfo->pMultisampleState->minSampleShading;
+        // 样本掩码（控制哪些样本被写入）
         vk_pipeline_multisample_state_create_info.pSampleMask = (const RHISampleMask*)pCreateInfo->pMultisampleState->pSampleMask;
+        // 是否启用alpha到覆盖（将片元的alpha值转换为样本覆盖掩码）
         vk_pipeline_multisample_state_create_info.alphaToCoverageEnable = (VkBool32)pCreateInfo->pMultisampleState->alphaToCoverageEnable;
+        // 是否启用alpha到单分量（将alpha值复制到其他颜色分量）
         vk_pipeline_multisample_state_create_info.alphaToOneEnable = (VkBool32)pCreateInfo->pMultisampleState->alphaToOneEnable;
 
+        // ------------------- 深度/模板状态（Depth Stencil） -------------------
+        // 转换正面模板操作状态
         VkStencilOpState stencil_op_state_front{};
         stencil_op_state_front.failOp = (VkStencilOp)pCreateInfo->pDepthStencilState->front.failOp;
         stencil_op_state_front.passOp = (VkStencilOp)pCreateInfo->pDepthStencilState->front.passOp;
@@ -1565,6 +1668,7 @@ namespace Sammi
         stencil_op_state_front.writeMask = pCreateInfo->pDepthStencilState->front.writeMask;
         stencil_op_state_front.reference = pCreateInfo->pDepthStencilState->front.reference;
 
+        // 转换背面模板操作状态（与正面类似）
         VkStencilOpState stencil_op_state_back{};
         stencil_op_state_back.failOp = (VkStencilOp)pCreateInfo->pDepthStencilState->back.failOp;
         stencil_op_state_back.passOp = (VkStencilOp)pCreateInfo->pDepthStencilState->back.passOp;
@@ -1574,76 +1678,114 @@ namespace Sammi
         stencil_op_state_back.writeMask = pCreateInfo->pDepthStencilState->back.writeMask;
         stencil_op_state_back.reference = pCreateInfo->pDepthStencilState->back.reference;
 
-
+        // 填充深度/模板状态创建信息
         VkPipelineDepthStencilStateCreateInfo vk_pipeline_depth_stencil_state_create_info{};
         vk_pipeline_depth_stencil_state_create_info.sType = (VkStructureType)pCreateInfo->pDepthStencilState->sType;
         vk_pipeline_depth_stencil_state_create_info.pNext = (const void*)pCreateInfo->pDepthStencilState->pNext;
         vk_pipeline_depth_stencil_state_create_info.flags = (VkPipelineDepthStencilStateCreateFlags)pCreateInfo->pDepthStencilState->flags;
+        // 是否启用深度测试
         vk_pipeline_depth_stencil_state_create_info.depthTestEnable = (VkBool32)pCreateInfo->pDepthStencilState->depthTestEnable;
+        // 是否启用深度写入（通过测试的片段写入深度缓冲）
         vk_pipeline_depth_stencil_state_create_info.depthWriteEnable = (VkBool32)pCreateInfo->pDepthStencilState->depthWriteEnable;
+        // 深度比较操作（如VK_COMPARE_OP_LESS）
         vk_pipeline_depth_stencil_state_create_info.depthCompareOp = (VkCompareOp)pCreateInfo->pDepthStencilState->depthCompareOp;
+        // 是否启用深度边界测试（用于体积雾等效果）
         vk_pipeline_depth_stencil_state_create_info.depthBoundsTestEnable = (VkBool32)pCreateInfo->pDepthStencilState->depthBoundsTestEnable;
+        // 是否启用模板测试
         vk_pipeline_depth_stencil_state_create_info.stencilTestEnable = (VkBool32)pCreateInfo->pDepthStencilState->stencilTestEnable;
+        // 正面模板操作状态
         vk_pipeline_depth_stencil_state_create_info.front = stencil_op_state_front;
+        // 背面模板操作状态
         vk_pipeline_depth_stencil_state_create_info.back = stencil_op_state_back;
+        // 深度测试的最小边界值
         vk_pipeline_depth_stencil_state_create_info.minDepthBounds = pCreateInfo->pDepthStencilState->minDepthBounds;
+        // 深度测试的最大边界值
         vk_pipeline_depth_stencil_state_create_info.maxDepthBounds = pCreateInfo->pDepthStencilState->maxDepthBounds;
 
-        //pipeline_color_blend_attachment_state
+        // ------------------- 颜色混合状态（Color Blend） -------------------
+        // -------------------- 颜色混合附件状态转换 --------------------
+        // 获取颜色混合附件数量（来自创建信息的颜色混合状态）
         int pipeline_color_blend_attachment_state_size = pCreateInfo->pColorBlendState->attachmentCount;
+        // 预分配Vulkan颜色混合附件状态数组（每个附件对应一个渲染目标）
         std::vector<VkPipelineColorBlendAttachmentState> vk_pipeline_color_blend_attachment_state_list(pipeline_color_blend_attachment_state_size);
+        // 遍历转换每个附件的混合状态：
         for (int i = 0; i < pipeline_color_blend_attachment_state_size; ++i)
         {
             const auto& rhi_pipeline_color_blend_attachment_state_element = pCreateInfo->pColorBlendState->pAttachments[i];
             auto& vk_pipeline_color_blend_attachment_state_element = vk_pipeline_color_blend_attachment_state_list[i];
 
+            // 填充字段：
+            // 是否启用混合（混合公式是否应用）
             vk_pipeline_color_blend_attachment_state_element.blendEnable = (VkBool32)rhi_pipeline_color_blend_attachment_state_element.blendEnable;
+            // 源颜色混合因子（新颜色的系数，如VK_BLEND_FACTOR_SRC_ALPHA）
             vk_pipeline_color_blend_attachment_state_element.srcColorBlendFactor = (VkBlendFactor)rhi_pipeline_color_blend_attachment_state_element.srcColorBlendFactor;
+            // 目标颜色混合因子（旧颜色的系数，如VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA）
             vk_pipeline_color_blend_attachment_state_element.dstColorBlendFactor = (VkBlendFactor)rhi_pipeline_color_blend_attachment_state_element.dstColorBlendFactor;
+            // 颜色混合操作（如加法、减法）
             vk_pipeline_color_blend_attachment_state_element.colorBlendOp = (VkBlendOp)rhi_pipeline_color_blend_attachment_state_element.colorBlendOp;
+            // 源alpha混合因子（与颜色因子可能不同）
             vk_pipeline_color_blend_attachment_state_element.srcAlphaBlendFactor = (VkBlendFactor)rhi_pipeline_color_blend_attachment_state_element.srcAlphaBlendFactor;
+            // 目标alpha混合因子
             vk_pipeline_color_blend_attachment_state_element.dstAlphaBlendFactor = (VkBlendFactor)rhi_pipeline_color_blend_attachment_state_element.dstAlphaBlendFactor;
+            // alpha混合操作
             vk_pipeline_color_blend_attachment_state_element.alphaBlendOp = (VkBlendOp)rhi_pipeline_color_blend_attachment_state_element.alphaBlendOp;
+            // 颜色写入掩码（控制哪些颜色通道被写入，如VK_COLOR_COMPONENT_R_BIT）
             vk_pipeline_color_blend_attachment_state_element.colorWriteMask = (VkColorComponentFlags)rhi_pipeline_color_blend_attachment_state_element.colorWriteMask;
         };
 
+        // -------------------- 填充颜色混合状态创建信息 --------------------
         VkPipelineColorBlendStateCreateInfo vk_pipeline_color_blend_state_create_info{};
         vk_pipeline_color_blend_state_create_info.sType = (VkStructureType)pCreateInfo->pColorBlendState->sType;
         vk_pipeline_color_blend_state_create_info.pNext = pCreateInfo->pColorBlendState->pNext;
         vk_pipeline_color_blend_state_create_info.flags = pCreateInfo->pColorBlendState->flags;
+        // 是否启用逻辑操作（替代混合公式）
         vk_pipeline_color_blend_state_create_info.logicOpEnable = pCreateInfo->pColorBlendState->logicOpEnable;
+        // 逻辑操作类型（如VK_LOGIC_OP_CLEAR）
         vk_pipeline_color_blend_state_create_info.logicOp = (VkLogicOp)pCreateInfo->pColorBlendState->logicOp;
+        // 颜色混合附件数量及指针（指向预分配的附件状态数组）
         vk_pipeline_color_blend_state_create_info.attachmentCount = pCreateInfo->pColorBlendState->attachmentCount;
         vk_pipeline_color_blend_state_create_info.pAttachments = vk_pipeline_color_blend_attachment_state_list.data();
+        // 混合常量（用于常量颜色混合模式）
         for (int i = 0; i < 4; ++i)
         {
             vk_pipeline_color_blend_state_create_info.blendConstants[i] = pCreateInfo->pColorBlendState->blendConstants[i];
         };
 
-        //dynamic_state
+        // --------------------- 动态状态（Dynamic State） ---------------------
+        // -------------------- 动态状态枚举转换 --------------------
+        // 获取动态状态数量（来自创建信息的动态状态）
         int dynamic_state_size = pCreateInfo->pDynamicState->dynamicStateCount;
+        // 预分配Vulkan动态状态数组（每个元素是一个动态状态枚举值）
         std::vector<VkDynamicState> vk_dynamic_state_list(dynamic_state_size);
+        // 遍历转换每个动态状态：
         for (int i = 0; i < dynamic_state_size; ++i)
         {
             const auto& rhi_dynamic_state_element = pCreateInfo->pDynamicState->pDynamicStates[i];
             auto& vk_dynamic_state_element = vk_dynamic_state_list[i];
 
+            // 直接转换枚举值（如VK_DYNAMIC_STATE_VIEWPORT表示视口可动态调整）
             vk_dynamic_state_element = (VkDynamicState)rhi_dynamic_state_element;
         };
 
+        // -------------------- 填充动态状态创建信息 --------------------
         VkPipelineDynamicStateCreateInfo vk_pipeline_dynamic_state_create_info{};
         vk_pipeline_dynamic_state_create_info.sType = (VkStructureType)pCreateInfo->pDynamicState->sType;
         vk_pipeline_dynamic_state_create_info.pNext = pCreateInfo->pDynamicState->pNext;
         vk_pipeline_dynamic_state_create_info.flags = (VkPipelineDynamicStateCreateFlags)pCreateInfo->pDynamicState->flags;
+        // 动态状态数量及指针（指向预分配的动态状态数组）
         vk_pipeline_dynamic_state_create_info.dynamicStateCount = pCreateInfo->pDynamicState->dynamicStateCount;
         vk_pipeline_dynamic_state_create_info.pDynamicStates = vk_dynamic_state_list.data();
 
+        // ------------------------ 主管线创建信息 ------------------------
+        // 填充Vulkan图形管线创建信息结构体（汇总所有阶段的状态）
         VkGraphicsPipelineCreateInfo create_info{};
         create_info.sType = (VkStructureType)pCreateInfo->sType;
         create_info.pNext = (const void*)pCreateInfo->pNext;
         create_info.flags = (VkPipelineCreateFlags)pCreateInfo->flags;
+        // 着色器阶段数量及指针（指向预分配的着色器阶段数组）
         create_info.stageCount = pCreateInfo->stageCount;
         create_info.pStages = vk_pipeline_shader_stage_create_info_list.data();
+        // 各阶段状态信息的指针（已填充的Vulkan结构体）
         create_info.pVertexInputState = &vk_pipeline_vertex_input_state_create_info;
         create_info.pInputAssemblyState = &vk_pipeline_input_assembly_state_create_info;
         create_info.pTessellationState = vk_pipeline_tessellation_state_create_info_ptr;
@@ -1653,32 +1795,44 @@ namespace Sammi
         create_info.pDepthStencilState = &vk_pipeline_depth_stencil_state_create_info;
         create_info.pColorBlendState = &vk_pipeline_color_blend_state_create_info;
         create_info.pDynamicState = &vk_pipeline_dynamic_state_create_info;
+        // 管线布局（描述着色器资源绑定方式，从RHI对象获取Vulkan句柄）
         create_info.layout = ((VulkanPipelineLayout*)pCreateInfo->layout)->getResource();
+        // 渲染通道（描述渲染目标和附件操作，从RHI对象获取Vulkan句柄）
         create_info.renderPass = ((VulkanRenderPass*)pCreateInfo->renderPass)->getResource();
+        // 当前子通道索引（用于多子通道渲染）
         create_info.subpass = pCreateInfo->subpass;
+        // 基础管线句柄（用于派生管线，若存在则从RHI对象获取Vulkan句柄）
         if (pCreateInfo->basePipelineHandle != nullptr)
         {
             create_info.basePipelineHandle = ((VulkanPipeline*)pCreateInfo->basePipelineHandle)->getResource();
         }
         else
         {
-            create_info.basePipelineHandle = VK_NULL_HANDLE;
+            create_info.basePipelineHandle = VK_NULL_HANDLE;  // 无基础管线
         }
+        // 基础管线索引（派生管线时的索引，通常为0）
         create_info.basePipelineIndex = pCreateInfo->basePipelineIndex;
 
+        // ------------------------ 创建管线对象 ------------------------
+        // 输出参数初始化（分配VulkanPipeline对象）
         pPipelines = new VulkanPipeline();
+        // 用于存储Vulkan管线句柄的临时变量
         VkPipeline vk_pipelines;
+        // Vulkan管线缓存句柄（若提供了pipelineCache则使用，否则为VK_NULL_HANDLE）
         VkPipelineCache vk_pipeline_cache = VK_NULL_HANDLE;
         if (pipelineCache != nullptr)
         {
             vk_pipeline_cache = ((VulkanPipelineCache*)pipelineCache)->getResource();
         }
+        // 调用Vulkan API创建图形管线
         VkResult result = vkCreateGraphicsPipelines(m_device, vk_pipeline_cache, createInfoCount, &create_info, nullptr, &vk_pipelines);
+        // 将Vulkan管线句柄保存到输出的RHI管线对象中
         ((VulkanPipeline*)pPipelines)->setResource(vk_pipelines);
 
+        // ------------------------ 错误处理 ------------------------
         if (result == VK_SUCCESS)
         {
-            return RHI_SUCCESS;
+            return RHI_SUCCESS;  // 创建成功
         }
         else
         {

@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include <unordered_map>
 
-namespace Piccolo
+namespace Sammi
 {
     static const size_t s_invalid_guid = 0;
 
@@ -101,4 +101,4 @@ namespace Piccolo
         std::unordered_map<size_t, T> m_guid_elements_map;
     };
 
-} // namespace Piccolo
+}

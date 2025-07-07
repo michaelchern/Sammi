@@ -1164,11 +1164,16 @@ namespace Sammi
         }
     };
 
+    #pragma region 4-SwapChain
+
     // 交换链支持详情 (Vulkan特定)
     struct SwapChainSupportDetails
     {
-        VkSurfaceCapabilitiesKHR        capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR>   presentModes;
+        VkSurfaceCapabilitiesKHR        capabilities;  // 表面能力（最小/最大图像数量，图像尺寸范围等）
+        std::vector<VkSurfaceFormatKHR> formats;       // 支持的像素格式列表
+        std::vector<VkPresentModeKHR>   presentModes;  // 支持的呈现模式列表
     };
+
+    #pragma endregion
+
 }

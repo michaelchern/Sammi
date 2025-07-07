@@ -1300,13 +1300,27 @@ namespace Sammi
         }
     }
 
+    // 清理交换链资源函数
     void VulkanRHI::clearSwapchain()
     {
+        // 销毁所有交换链图像视图
         for (auto imageview : m_swapchain_imageviews)
         {
-            vkDestroyImageView(m_device, ((VulkanImageView*)imageview)->getResource(), NULL);
+            // 将自定义图像视图对象转换为底层VkImageView句柄
+            VkImageView vk_image_view = ((VulkanImageView*)imageview)->getResource();
+
+            // 调用Vulkan API销毁图像视图
+            vkDestroyImageView(m_device, vk_image_view, NULL);
         }
-        vkDestroySwapchainKHR(m_device, m_swapchain, NULL); // also swapchain images
+
+        /* 注意：此处未删除自定义VulkanImageView对象
+         * 可能需要在销毁后清空容器或删除对象指针
+         * 例如：delete (VulkanImageView*)imageview;
+         */
+
+        // 销毁整个交换链
+        // 注意：此操作会自动销毁所有关联的交换链图像（VkImage）
+        vkDestroySwapchainKHR(m_device, m_swapchain, NULL);
     }
 
     #pragma endregion

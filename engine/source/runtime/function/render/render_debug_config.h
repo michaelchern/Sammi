@@ -1,4 +1,5 @@
-namespace Piccolo
+﻿
+namespace Sammi
 {
     class RenderDebugConfig
     {

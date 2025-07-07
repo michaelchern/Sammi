@@ -273,7 +273,6 @@ namespace Sammi
         RHIQueue* m_graphics_queue{ nullptr };  // 图形队列
         RHIQueue* m_compute_queue{ nullptr };  // 计算队列
 
-        // 交换链属性
         
         
         

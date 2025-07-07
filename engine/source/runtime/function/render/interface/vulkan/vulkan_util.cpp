@@ -31,20 +31,7 @@ namespace Sammi
         return 0;
     }
 
-    VkShaderModule VulkanUtil::createShaderModule(VkDevice device, const std::vector<unsigned char>& shader_code)
-    {
-        VkShaderModuleCreateInfo shader_module_create_info {};
-        shader_module_create_info.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        shader_module_create_info.codeSize = shader_code.size();
-        shader_module_create_info.pCode    = reinterpret_cast<const uint32_t*>(shader_code.data());
-
-        VkShaderModule shader_module;
-        if (vkCreateShaderModule(device, &shader_module_create_info, nullptr, &shader_module) != VK_SUCCESS)
-        {
-            return VK_NULL_HANDLE;
-        }
-        return shader_module;
-    }
+    
 
     void VulkanUtil::createBufferAndInitialize(VkDevice              device,
                                        VkPhysicalDevice      physicalDevice,
@@ -299,7 +286,36 @@ namespace Sammi
 
     #pragma region 5-Pipeline
 
+    // 创建 Vulkan 着色器模块（从 SPIR-V 字节码）
+    VkShaderModule VulkanUtil::createShaderModule(VkDevice device, const std::vector<unsigned char>& shader_code)
+    {
+        // 准备着色器模块创建信息结构体
+        VkShaderModuleCreateInfo shader_module_create_info{};
+        shader_module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        shader_module_create_info.codeSize = shader_code.size();  // SPIR-V 字节码长度
+        shader_module_create_info.pCode = reinterpret_cast<const uint32_t*>(shader_code.data());  // 字节码指针
 
+        /* 注意：pCode 要求 4 字节对齐
+         * std::vector<unsigned char> 自动满足内存连续性要求
+         * 但需确保实际代码大小是 sizeof(uint32_t) 的倍数
+         * 标准 SPIR-V 编译器输出天然满足此要求
+         */
+
+        // 实际创建着色器模块
+        VkShaderModule shader_module;
+        VkResult result = vkCreateShaderModule(device,                     // 逻辑设备
+                                              &shader_module_create_info,  // 创建信息
+                                               nullptr,                    // 使用默认分配器
+                                              &shader_module);             // 输出参数：着色器模块句柄
+
+        // 错误处理：创建失败时返回空句柄
+        if (result != VK_SUCCESS)
+        {
+            LOG_ERROR("Failed to create shader module: {}", static_cast<int>(result));
+            return VK_NULL_HANDLE;
+        }
+        return shader_module;  // 返回成功创建的着色器模块
+    }
 
     #pragma endregion
 

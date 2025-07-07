@@ -201,7 +201,20 @@ namespace Sammi
 
     #pragma region 5-Pipeline
 
-
+    class VulkanShader : public RHIShader
+    {
+    public:
+        void setResource(VkShaderModule res)
+        {
+            m_resource = res;
+        }
+        VkShaderModule getResource() const
+        {
+            return m_resource;
+        }
+    private:
+        VkShaderModule m_resource;
+    };
 
     #pragma endregion
 
@@ -334,18 +347,5 @@ namespace Sammi
     private:
         VkSemaphore m_resource;
     };
-    class VulkanShader : public RHIShader
-    {
-    public:
-        void setResource(VkShaderModule res)
-        {
-            m_resource = res;
-        }
-        VkShaderModule getResource() const
-        {
-            return m_resource;
-        }
-    private:
-        VkShaderModule m_resource;
-    };
+    
 }

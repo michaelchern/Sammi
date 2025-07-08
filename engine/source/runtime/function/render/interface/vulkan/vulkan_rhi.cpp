@@ -1879,6 +1879,190 @@ namespace Sammi
 
     #pragma endregion
 
+    #pragma region 6-RenderPass
+
+    // 创建Vulkan渲染通道对象，将RHI层渲染通道描述转换为Vulkan API所需的结构并提交创建
+    // 参数：
+    //   pCreateInfo: 输入的RHI渲染通道创建信息，包含附件、子通道、依赖等描述
+    //   pRenderPass: 输出的RHI渲染通道对象指针（Vulkan实现）
+    // 返回值：RHI_SUCCESS表示成功，否则表示失败
+    bool VulkanRHI::createRenderPass(const RHIRenderPassCreateInfo* pCreateInfo, RHIRenderPass*& pRenderPass)
+    {
+        // -------------------- 附件描述转换（Attachment Description Conversion） --------------------
+        // 将RHI的附件描述数组转换为Vulkan的VkAttachmentDescription数组
+        std::vector<VkAttachmentDescription> vk_attachments(pCreateInfo->attachmentCount);
+        for (int i = 0; i < pCreateInfo->attachmentCount; ++i)
+        {
+            const auto& rhi_desc = pCreateInfo->pAttachments[i];  // 当前RHI附件描述
+            auto& vk_desc = vk_attachments[i];                    // 对应的Vulkan附件描述
+
+            // 字段一一对应转换（注意类型强制转换，假设RHI和Vulkan枚举值兼容）
+            vk_desc.flags = (VkAttachmentDescriptionFlags)(rhi_desc).flags;           // 附件标志（如是否保留内容）
+            vk_desc.format = (VkFormat)(rhi_desc).format;                             // 附件图像格式（如VK_FORMAT_R8G8B8A8_UNORM）
+            vk_desc.samples = (VkSampleCountFlagBits)(rhi_desc).samples;              // 采样数（如VK_SAMPLE_COUNT_1_BIT）
+            vk_desc.loadOp = (VkAttachmentLoadOp)(rhi_desc).loadOp;                   // 加载操作（如清空/保留）
+            vk_desc.storeOp = (VkAttachmentStoreOp)(rhi_desc).storeOp;                // 存储操作（如存储/不存储）
+            vk_desc.stencilLoadOp = (VkAttachmentLoadOp)(rhi_desc).stencilLoadOp;     // 模板加载操作
+            vk_desc.stencilStoreOp = (VkAttachmentStoreOp)(rhi_desc).stencilStoreOp;  // 模板存储操作
+            vk_desc.initialLayout = (VkImageLayout)(rhi_desc).initialLayout;          // 初始布局（如未定义/颜色附件最优）
+            vk_desc.finalLayout = (VkImageLayout)(rhi_desc).finalLayout;              // 最终布局（如呈现/着色器读取）
+        };
+
+        // -------------------- 子通道准备（Subpass Preparation） --------------------
+    // 统计所有子通道需要的附件引用总数（输入/颜色/深度模板/解析附件）
+        int totalAttachmentRefenrence = 0;
+        for (int i = 0; i < pCreateInfo->subpassCount; i++)
+        {
+            const auto& rhi_desc = pCreateInfo->pSubpasses[i];
+            // 输入附件数量 + 颜色附件数量 + 深度模板附件数量（若有） + 解析附件数量（若有）
+            totalAttachmentRefenrence += rhi_desc.inputAttachmentCount;
+            totalAttachmentRefenrence += rhi_desc.colorAttachmentCount;
+            if (rhi_desc.pDepthStencilAttachment != nullptr)
+            {
+                totalAttachmentRefenrence += rhi_desc.colorAttachmentCount;
+            }
+            if (rhi_desc.pResolveAttachments != nullptr)
+            {
+                totalAttachmentRefenrence += rhi_desc.colorAttachmentCount;
+            }
+        }
+
+        // 分配Vulkan子通道描述数组和附件引用数组
+        std::vector<VkSubpassDescription> vk_subpass_description(pCreateInfo->subpassCount);
+        std::vector<VkAttachmentReference> vk_attachment_reference(totalAttachmentRefenrence);
+        int currentAttachmentRefence = 0;  // 当前已填充的附件引用索引
+
+        // -------------------- 填充子通道描述（Subpass Description Population） --------------------
+        for (int i = 0; i < pCreateInfo->subpassCount; ++i)
+        {
+            const auto& rhi_desc = pCreateInfo->pSubpasses[i];  // 当前RHI子通道描述
+            auto& vk_desc = vk_subpass_description[i];          // 对应的Vulkan子通道描述
+
+            // 基础属性设置
+            vk_desc.flags = (VkSubpassDescriptionFlags)(rhi_desc).flags;                      // 子通道标志（如保留附件行为）
+            vk_desc.pipelineBindPoint = (VkPipelineBindPoint)(rhi_desc).pipelineBindPoint;    // 管线绑定点（图形/计算）
+            vk_desc.preserveAttachmentCount = (rhi_desc).preserveAttachmentCount;             // 保留的附件数量（不参与渲染但需保留）
+            vk_desc.pPreserveAttachments = (const uint32_t*)(rhi_desc).pPreserveAttachments;  // 保留的附件索引数组
+
+            // 输入附件（Input Attachments）：用于片段着色器读取前一子通道的结果
+            vk_desc.inputAttachmentCount = (rhi_desc).inputAttachmentCount;
+            vk_desc.pInputAttachments = &vk_attachment_reference[currentAttachmentRefence];
+            for (int i = 0; i < (rhi_desc).inputAttachmentCount; i++)
+            {
+                const auto& rhi_attachment_refence_input = (rhi_desc).pInputAttachments[i];
+                auto& vk_attachment_refence_input = vk_attachment_reference[currentAttachmentRefence];
+                vk_attachment_refence_input.attachment = rhi_attachment_refence_input.attachment;           // 附件索引（对应vk_attachments数组中的位置）
+                vk_attachment_refence_input.layout = (VkImageLayout)(rhi_attachment_refence_input.layout);  // 输入时的图像布局（如着色器读取最优）
+                currentAttachmentRefence += 1;
+            };
+
+            // 颜色附件（Color Attachments）：用于颜色输出，绑定到帧缓冲的颜色附件槽
+            vk_desc.colorAttachmentCount = (rhi_desc).colorAttachmentCount;
+            vk_desc.pColorAttachments = &vk_attachment_reference[currentAttachmentRefence];
+            for (int i = 0; i < (rhi_desc).colorAttachmentCount; ++i)
+            {
+                const auto& rhi_attachment_refence_color = (rhi_desc).pColorAttachments[i];
+                auto& vk_attachment_refence_color = vk_attachment_reference[currentAttachmentRefence];
+                vk_attachment_refence_color.attachment = rhi_attachment_refence_color.attachment;
+                vk_attachment_refence_color.layout = (VkImageLayout)(rhi_attachment_refence_color.layout);  // 颜色输出时的布局（如颜色附件最优）
+                currentAttachmentRefence += 1;
+            };
+
+            // 解析附件（Resolve Attachments）：用于多重采样解析（MSAA），与颜色附件一一对应
+            if (rhi_desc.pResolveAttachments != nullptr)
+            {
+                vk_desc.pResolveAttachments = &vk_attachment_reference[currentAttachmentRefence];
+                for (int i = 0; i < (rhi_desc).colorAttachmentCount; ++i)
+                {
+                    const auto& rhi_attachment_refence_resolve = (rhi_desc).pResolveAttachments[i];
+                    auto& vk_attachment_refence_resolve = vk_attachment_reference[currentAttachmentRefence];
+
+                    vk_attachment_refence_resolve.attachment = rhi_attachment_refence_resolve.attachment;
+                    vk_attachment_refence_resolve.layout = (VkImageLayout)(rhi_attachment_refence_resolve.layout);
+
+                    currentAttachmentRefence += 1;
+                };
+            }
+
+            // 深度/模板附件（Depth/Stencil Attachment）：用于深度测试和模板测试
+            if (rhi_desc.pDepthStencilAttachment != nullptr)
+            {
+                vk_desc.pDepthStencilAttachment = &vk_attachment_reference[currentAttachmentRefence];
+                for (int i = 0; i < (rhi_desc).colorAttachmentCount; ++i)
+                {
+                    const auto& rhi_attachment_refence_depth = (rhi_desc).pDepthStencilAttachment[i];
+                    auto& vk_attachment_refence_depth = vk_attachment_reference[currentAttachmentRefence];
+
+                    vk_attachment_refence_depth.attachment = rhi_attachment_refence_depth.attachment;
+                    vk_attachment_refence_depth.layout = (VkImageLayout)(rhi_attachment_refence_depth.layout);
+
+                    currentAttachmentRefence += 1;
+                };
+            };
+        };
+
+        // 检查附件引用计数一致性（防止统计错误或填充越界）
+        if (currentAttachmentRefence != totalAttachmentRefenrence)
+        {
+            LOG_ERROR("Attachment reference count mismatch: current=%d, total=%d", currentAttachmentRefence, totalAttachmentRefenrence);
+            return false;
+        }
+
+        // -------------------- 子通道依赖转换（Subpass Dependency Conversion） --------------------
+        // 将RHI的子通道依赖转换为Vulkan的VkSubpassDependency数组
+        std::vector<VkSubpassDependency> vk_subpass_depandecy(pCreateInfo->dependencyCount);
+        for (int i = 0; i < pCreateInfo->dependencyCount; ++i)
+        {
+            const auto& rhi_desc = pCreateInfo->pDependencies[i];
+            auto& vk_desc = vk_subpass_depandecy[i];
+
+            // 设置依赖的源/目标子通道及阶段掩码
+            vk_desc.srcSubpass = rhi_desc.srcSubpass;  // 源子通道（依赖起始的子通道）
+            vk_desc.dstSubpass = rhi_desc.dstSubpass;  // 目标子通道（依赖结束的子通道）
+            vk_desc.srcStageMask = (VkPipelineStageFlags)(rhi_desc).srcStageMask;  // 源阶段（如颜色附件输出）
+            vk_desc.dstStageMask = (VkPipelineStageFlags)(rhi_desc).dstStageMask;  // 目标阶段（如输入附件读取）
+            // 设置访问掩码（控制内存访问同步）
+            vk_desc.srcAccessMask = (VkAccessFlags)(rhi_desc).srcAccessMask;
+            vk_desc.dstAccessMask = (VkAccessFlags)(rhi_desc).dstAccessMask;
+            // 依赖标志（如是否允许同时执行）
+            vk_desc.dependencyFlags = (VkDependencyFlags)(rhi_desc).dependencyFlags;
+        };
+
+        // -------------------- 提交Vulkan渲染通道创建（Vulkan RenderPass Creation） --------------------
+        // 填充Vulkan渲染通道创建信息结构体
+        VkRenderPassCreateInfo create_info{};
+        create_info.sType = (VkStructureType)pCreateInfo->sType;          // 结构体类型（强制转换原RHI的sType）
+        create_info.pNext = (const void*)pCreateInfo->pNext;              // 扩展指针（支持Vulkan扩展）
+        create_info.flags = (VkRenderPassCreateFlags)pCreateInfo->flags;  // 渲染通道标志（如保留附件）
+        create_info.attachmentCount = pCreateInfo->attachmentCount;       // 附件数量
+        create_info.pAttachments = vk_attachments.data();                 // 附件描述数组
+        create_info.subpassCount = pCreateInfo->subpassCount;             // 子通道数量
+        create_info.pSubpasses = vk_subpass_description.data();           // 子通道描述数组
+        create_info.dependencyCount = pCreateInfo->dependencyCount;       // 依赖数量
+        create_info.pDependencies = vk_subpass_depandecy.data();          // 依赖数组
+
+        // 创建Vulkan渲染通道对象
+        pRenderPass = new VulkanRenderPass();  // 分配RHI包装对象
+        VkRenderPass vk_render_pass;           // Vulkan原生渲染通道句柄
+        VkResult result = vkCreateRenderPass(m_device, &create_info, nullptr, &vk_render_pass);
+        // 将Vulkan句柄保存到RHI对象中
+        ((VulkanRenderPass*)pRenderPass)->setResource(vk_render_pass);
+
+        // 检查创建结果
+        if (result == VK_SUCCESS)
+        {
+            return RHI_SUCCESS;
+        }
+        else
+        {
+            LOG_ERROR("vkCreateRenderPass failed!");
+            return false;
+        }
+    }
+
+    #pragma endregion
+
+
     
 
     void VulkanRHI::createCommandPool()
@@ -2176,158 +2360,7 @@ namespace Sammi
 
     
 
-    bool VulkanRHI::createRenderPass(const RHIRenderPassCreateInfo* pCreateInfo, RHIRenderPass* &pRenderPass)
-    {
-        // attachment convert
-        std::vector<VkAttachmentDescription> vk_attachments(pCreateInfo->attachmentCount);
-        for (int i = 0; i < pCreateInfo->attachmentCount; ++i)
-        {
-            const auto& rhi_desc = pCreateInfo->pAttachments[i];
-            auto& vk_desc = vk_attachments[i];
-
-            vk_desc.flags = (VkAttachmentDescriptionFlags)(rhi_desc).flags;
-            vk_desc.format = (VkFormat)(rhi_desc).format;
-            vk_desc.samples = (VkSampleCountFlagBits)(rhi_desc).samples;
-            vk_desc.loadOp = (VkAttachmentLoadOp)(rhi_desc).loadOp;
-            vk_desc.storeOp = (VkAttachmentStoreOp)(rhi_desc).storeOp;
-            vk_desc.stencilLoadOp = (VkAttachmentLoadOp)(rhi_desc).stencilLoadOp;
-            vk_desc.stencilStoreOp = (VkAttachmentStoreOp)(rhi_desc).stencilStoreOp;
-            vk_desc.initialLayout = (VkImageLayout)(rhi_desc).initialLayout;
-            vk_desc.finalLayout = (VkImageLayout)(rhi_desc).finalLayout;
-        };
-
-        // subpass convert
-        int totalAttachmentRefenrence = 0;
-        for (int i = 0; i < pCreateInfo->subpassCount; i++)
-        {
-            const auto& rhi_desc = pCreateInfo->pSubpasses[i];
-            totalAttachmentRefenrence += rhi_desc.inputAttachmentCount; // pInputAttachments
-            totalAttachmentRefenrence += rhi_desc.colorAttachmentCount; // pColorAttachments
-            if (rhi_desc.pDepthStencilAttachment != nullptr)
-            {
-                totalAttachmentRefenrence += rhi_desc.colorAttachmentCount; // pDepthStencilAttachment
-            }
-            if (rhi_desc.pResolveAttachments != nullptr)
-            {
-                totalAttachmentRefenrence += rhi_desc.colorAttachmentCount; // pResolveAttachments
-            }
-        }
-        std::vector<VkSubpassDescription> vk_subpass_description(pCreateInfo->subpassCount);
-        std::vector<VkAttachmentReference> vk_attachment_reference(totalAttachmentRefenrence);
-        int currentAttachmentRefence = 0;
-        for (int i = 0; i < pCreateInfo->subpassCount; ++i)
-        {
-            const auto& rhi_desc = pCreateInfo->pSubpasses[i];
-            auto& vk_desc = vk_subpass_description[i];
-
-            vk_desc.flags = (VkSubpassDescriptionFlags)(rhi_desc).flags;
-            vk_desc.pipelineBindPoint = (VkPipelineBindPoint)(rhi_desc).pipelineBindPoint;
-            vk_desc.preserveAttachmentCount = (rhi_desc).preserveAttachmentCount;
-            vk_desc.pPreserveAttachments = (const uint32_t*)(rhi_desc).pPreserveAttachments;
-
-            vk_desc.inputAttachmentCount = (rhi_desc).inputAttachmentCount;
-            vk_desc.pInputAttachments = &vk_attachment_reference[currentAttachmentRefence];
-            for (int i = 0; i < (rhi_desc).inputAttachmentCount; i++)
-            {
-                const auto& rhi_attachment_refence_input = (rhi_desc).pInputAttachments[i];
-                auto& vk_attachment_refence_input = vk_attachment_reference[currentAttachmentRefence];
-
-                vk_attachment_refence_input.attachment = rhi_attachment_refence_input.attachment;
-                vk_attachment_refence_input.layout = (VkImageLayout)(rhi_attachment_refence_input.layout);
-
-                currentAttachmentRefence += 1;
-            };
-
-            vk_desc.colorAttachmentCount = (rhi_desc).colorAttachmentCount;
-            vk_desc.pColorAttachments = &vk_attachment_reference[currentAttachmentRefence];
-            for (int i = 0; i < (rhi_desc).colorAttachmentCount; ++i)
-            {
-                const auto& rhi_attachment_refence_color = (rhi_desc).pColorAttachments[i];
-                auto& vk_attachment_refence_color = vk_attachment_reference[currentAttachmentRefence];
-
-                vk_attachment_refence_color.attachment = rhi_attachment_refence_color.attachment;
-                vk_attachment_refence_color.layout = (VkImageLayout)(rhi_attachment_refence_color.layout);
-
-                currentAttachmentRefence += 1;
-            };
-
-            if (rhi_desc.pResolveAttachments != nullptr)
-            {
-                vk_desc.pResolveAttachments = &vk_attachment_reference[currentAttachmentRefence];
-                for (int i = 0; i < (rhi_desc).colorAttachmentCount; ++i)
-                {
-                    const auto& rhi_attachment_refence_resolve = (rhi_desc).pResolveAttachments[i];
-                    auto& vk_attachment_refence_resolve = vk_attachment_reference[currentAttachmentRefence];
-
-                    vk_attachment_refence_resolve.attachment = rhi_attachment_refence_resolve.attachment;
-                    vk_attachment_refence_resolve.layout = (VkImageLayout)(rhi_attachment_refence_resolve.layout);
-
-                    currentAttachmentRefence += 1;
-                };
-            }
-
-            if (rhi_desc.pDepthStencilAttachment != nullptr)
-            {
-                vk_desc.pDepthStencilAttachment = &vk_attachment_reference[currentAttachmentRefence];
-                for (int i = 0; i < (rhi_desc).colorAttachmentCount; ++i)
-                {
-                    const auto& rhi_attachment_refence_depth = (rhi_desc).pDepthStencilAttachment[i];
-                    auto& vk_attachment_refence_depth = vk_attachment_reference[currentAttachmentRefence];
-
-                    vk_attachment_refence_depth.attachment = rhi_attachment_refence_depth.attachment;
-                    vk_attachment_refence_depth.layout = (VkImageLayout)(rhi_attachment_refence_depth.layout);
-
-                    currentAttachmentRefence += 1;
-                };
-            };
-        };
-        if (currentAttachmentRefence != totalAttachmentRefenrence)
-        {
-            LOG_ERROR("currentAttachmentRefence != totalAttachmentRefenrence");
-            return false;
-        }
-
-        std::vector<VkSubpassDependency> vk_subpass_depandecy(pCreateInfo->dependencyCount);
-        for (int i = 0; i < pCreateInfo->dependencyCount; ++i)
-        {
-            const auto& rhi_desc = pCreateInfo->pDependencies[i];
-            auto& vk_desc = vk_subpass_depandecy[i];
-
-            vk_desc.srcSubpass = rhi_desc.srcSubpass;
-            vk_desc.dstSubpass = rhi_desc.dstSubpass;
-            vk_desc.srcStageMask = (VkPipelineStageFlags)(rhi_desc).srcStageMask;
-            vk_desc.dstStageMask = (VkPipelineStageFlags)(rhi_desc).dstStageMask;
-            vk_desc.srcAccessMask = (VkAccessFlags)(rhi_desc).srcAccessMask;
-            vk_desc.dstAccessMask = (VkAccessFlags)(rhi_desc).dstAccessMask;
-            vk_desc.dependencyFlags = (VkDependencyFlags)(rhi_desc).dependencyFlags;
-        };
-
-        VkRenderPassCreateInfo create_info{};
-        create_info.sType = (VkStructureType)pCreateInfo->sType;
-        create_info.pNext = (const void*)pCreateInfo->pNext;
-        create_info.flags = (VkRenderPassCreateFlags)pCreateInfo->flags;
-        create_info.attachmentCount = pCreateInfo->attachmentCount;
-        create_info.pAttachments = vk_attachments.data();
-        create_info.subpassCount = pCreateInfo->subpassCount;
-        create_info.pSubpasses = vk_subpass_description.data();
-        create_info.dependencyCount = pCreateInfo->dependencyCount;
-        create_info.pDependencies = vk_subpass_depandecy.data();
-
-        pRenderPass = new VulkanRenderPass();
-        VkRenderPass vk_render_pass;
-        VkResult result = vkCreateRenderPass(m_device, &create_info, nullptr, &vk_render_pass);
-        ((VulkanRenderPass*)pRenderPass)->setResource(vk_render_pass);
-
-        if (result == VK_SUCCESS)
-        {
-            return RHI_SUCCESS;
-        }
-        else
-        {
-            LOG_ERROR("vkCreateRenderPass failed!");
-            return false;
-        }
-    }
+    
 
     bool VulkanRHI::createSampler(const RHISamplerCreateInfo* pCreateInfo, RHISampler* &pSampler)
     {

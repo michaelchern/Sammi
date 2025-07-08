@@ -208,12 +208,29 @@ namespace Sammi
         {
             m_resource = res;
         }
+
         VkShaderModule getResource() const
         {
             return m_resource;
         }
     private:
         VkShaderModule m_resource;
+    };
+
+    class VulkanPipeline : public RHIPipeline
+    {
+    public:
+        void setResource(VkPipeline res)
+        {
+            m_resource = res;
+        }
+
+        VkPipeline getResource() const
+        {
+            return m_resource;
+        }
+    private:
+        VkPipeline m_resource;
     };
 
     #pragma endregion
@@ -263,20 +280,7 @@ namespace Sammi
     private:
         VkPhysicalDevice m_resource;
     };
-    class VulkanPipeline : public RHIPipeline
-    {
-    public:
-        void setResource(VkPipeline res)
-        {
-            m_resource = res;
-        }
-        VkPipeline getResource() const
-        {
-            return m_resource;
-        }
-    private:
-        VkPipeline m_resource;
-    };
+    
     class VulkanPipelineCache : public RHIPipelineCache
     {
     public:

@@ -6,14 +6,14 @@
 #include <string>
 #include <unordered_set>
 
-namespace Piccolo
+namespace Sammi
 {
     extern bool                            g_is_editor_mode;
     extern std::unordered_set<std::string> g_editor_tick_component_types;
 
-    class PiccoloEngine
+    class SammiEngine
     {
-        friend class PiccoloEditor;
+        friend class SammiEditor;
 
         static const float s_fps_alpha;
 
@@ -51,4 +51,4 @@ namespace Piccolo
         int   m_fps {0};
     };
 
-} // namespace Piccolo
+}

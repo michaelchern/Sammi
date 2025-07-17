@@ -2,37 +2,36 @@
 
 #include "runtime/function/render/render_type.h"
 #include <optional>
-
-namespace Sammi
+namespace Piccolo
 {
     /////////////////////////////////////////////////
-#define RHI_DELETE_PTR(x) delete x; x = nullptr;
+    #define RHI_DELETE_PTR(x) delete x; x = nullptr;
 
-////////////////////class////////////////////////
-    class RHIBuffer {};
-    class RHIBufferView {};
-    class RHICommandBuffer {};
-    class RHICommandPool {};
-    class RHIDescriptorPool {};
-    class RHIDescriptorSet {};
-    class RHIDescriptorSetLayout {};
-    class RHIDevice {};
-    class RHIDeviceMemory {};
-    class RHIEvent {};
-    class RHIFence {};
-    class RHIFramebuffer {};
-    class RHIImage {};
-    class RHIImageView {};
-    class RHIInstance {};
-    class RHIQueue {};
-    class RHIPhysicalDevice {};
-    class RHIPipeline {};
-    class RHIPipelineCache {};
-    class RHIPipelineLayout {};
-    class RHIRenderPass {};
-    class RHISampler {};
-    class RHISemaphore {};
-    class RHIShader {};
+    ////////////////////class////////////////////////
+    class RHIBuffer { };
+    class RHIBufferView { };
+    class RHICommandBuffer { };
+    class RHICommandPool { };
+    class RHIDescriptorPool { };
+    class RHIDescriptorSet { };
+    class RHIDescriptorSetLayout { };
+    class RHIDevice { };
+    class RHIDeviceMemory { };
+    class RHIEvent { };
+    class RHIFence { };
+    class RHIFramebuffer { };
+    class RHIImage { };
+    class RHIImageView { };
+    class RHIInstance { };
+    class RHIQueue { };
+    class RHIPhysicalDevice { };
+    class RHIPipeline { };
+    class RHIPipelineCache { };
+    class RHIPipelineLayout { };
+    class RHIRenderPass { };
+    class RHISampler { };
+    class RHISemaphore { };
+    class RHIShader { };
 
 
     ////////////////////struct//////////////////////////

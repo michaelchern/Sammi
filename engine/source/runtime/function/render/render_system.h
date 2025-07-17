@@ -1,15 +1,15 @@
 #pragma once
 
-//#include "runtime/function/render/render_entity.h"
-//#include "runtime/function/render/render_guid_allocator.h"
-//#include "runtime/function/render/render_swap_context.h"
-//#include "runtime/function/render/render_type.h"
+#include "runtime/function/render/render_entity.h"
+#include "runtime/function/render/render_guid_allocator.h"
+#include "runtime/function/render/render_swap_context.h"
+#include "runtime/function/render/render_type.h"
 
 #include <array>
 #include <memory>
 #include <optional>
 
-namespace Sammi
+namespace Piccolo
 {
     class WindowSystem;
     class RHI;
@@ -45,30 +45,30 @@ namespace Sammi
         void clear();
 
         void                          swapLogicRenderData();
-        //RenderSwapContext&            getSwapContext();
+        RenderSwapContext&            getSwapContext();
         std::shared_ptr<RenderCamera> getRenderCamera() const;
         std::shared_ptr<RHI>          getRHI() const;
 
-        //void      setRenderPipelineType(RENDER_PIPELINE_TYPE pipeline_type);
+        void      setRenderPipelineType(RENDER_PIPELINE_TYPE pipeline_type);
         void      initializeUIRenderBackend(WindowUI* window_ui);
         void      updateEngineContentViewport(float offset_x, float offset_y, float width, float height);
-        //uint32_t  getGuidOfPickedMesh(const Vector2& picked_uv);
-        //GObjectID getGObjectIDByMeshID(uint32_t mesh_id) const;
+        uint32_t  getGuidOfPickedMesh(const Vector2& picked_uv);
+        GObjectID getGObjectIDByMeshID(uint32_t mesh_id) const;
 
         EngineContentViewport getEngineContentViewport() const;
 
-        //void createAxis(std::array<RenderEntity, 3> axis_entities, std::array<RenderMeshData, 3> mesh_datas);
-        //void setVisibleAxis(std::optional<RenderEntity> axis);
+        void createAxis(std::array<RenderEntity, 3> axis_entities, std::array<RenderMeshData, 3> mesh_datas);
+        void setVisibleAxis(std::optional<RenderEntity> axis);
         void setSelectedAxis(size_t selected_axis);
-        //GuidAllocator<GameObjectPartId>& getGOInstanceIdAllocator();
-        //GuidAllocator<MeshSourceDesc>&   getMeshAssetIdAllocator();
+        GuidAllocator<GameObjectPartId>& getGOInstanceIdAllocator();
+        GuidAllocator<MeshSourceDesc>&   getMeshAssetIdAllocator();
 
         void clearForLevelReloading();
 
     private:
-        //RENDER_PIPELINE_TYPE m_render_pipeline_type {RENDER_PIPELINE_TYPE::DEFERRED_PIPELINE};
+        RENDER_PIPELINE_TYPE m_render_pipeline_type {RENDER_PIPELINE_TYPE::DEFERRED_PIPELINE};
 
-        //RenderSwapContext m_swap_context;
+        RenderSwapContext m_swap_context;
 
         std::shared_ptr<RHI>                m_rhi;
         std::shared_ptr<RenderCamera>       m_render_camera;
@@ -78,4 +78,4 @@ namespace Sammi
 
         void processSwapData();
     };
-}
+} // namespace Piccolo

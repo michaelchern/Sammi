@@ -6,25 +6,25 @@
 #include <memory>
 #include <string>
 
+
 /// <summary>
 /// RHI Type
 /// </summary>
-namespace Sammi
+namespace Piccolo
 {
-
-#define RHI_MAX_EXTENSION_NAME_SIZE       256U
-#define RHI_MAX_DESCRIPTION_SIZE          256U
-#define RHI_MAX_MEMORY_TYPES              32U
-#define RHI_MAX_PHYSICAL_DEVICE_NAME_SIZE 256U
-#define RHI_UUID_SIZE                     16U
-#define RHI_MAX_MEMORY_HEAPS              16U
-#define RHI_SUBPASS_EXTERNAL              (~0U)
-#define RHI_QUEUE_FAMILY_IGNORED          (~0U)
-#define RHI_WHOLE_SIZE                    (~0ULL)
-#define RHI_NULL_HANDLE                   nullptr
-#define RHI_SUCCESS                       true
-#define RHI_TRUE                          true
-#define RHI_FALSE                         false
+#define RHI_MAX_EXTENSION_NAME_SIZE        256U
+#define RHI_MAX_DESCRIPTION_SIZE           256U
+#define RHI_MAX_MEMORY_TYPES               32U
+#define RHI_MAX_PHYSICAL_DEVICE_NAME_SIZE  256U
+#define RHI_UUID_SIZE                      16U
+#define RHI_MAX_MEMORY_HEAPS               16U
+#define RHI_SUBPASS_EXTERNAL               (~0U)
+#define RHI_QUEUE_FAMILY_IGNORED           (~0U)
+#define RHI_WHOLE_SIZE                     (~0ULL)
+#define RHI_NULL_HANDLE                       nullptr
+#define RHI_SUCCESS                        true
+#define RHI_TRUE                           true
+#define RHI_FALSE                           false
 
     enum RHIStructureType : int
     {
@@ -1304,8 +1304,7 @@ namespace Sammi
         RHI_SHADER_STAGE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIComponentSwizzle : int
-    {
+    enum RHIComponentSwizzle : int {
         RHI_COMPONENT_SWIZZLE_IDENTITY = 0,
         RHI_COMPONENT_SWIZZLE_ZERO = 1,
         RHI_COMPONENT_SWIZZLE_ONE = 2,
@@ -1316,8 +1315,7 @@ namespace Sammi
         RHI_COMPONENT_SWIZZLE_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIBlendOp : int
-    {
+    enum RHIBlendOp : int {
         RHI_BLEND_OP_ADD = 0,
         RHI_BLEND_OP_SUBTRACT = 1,
         RHI_BLEND_OP_REVERSE_SUBTRACT = 2,
@@ -1372,8 +1370,7 @@ namespace Sammi
         RHI_BLEND_OP_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIStencilOp : int
-    {
+    enum RHIStencilOp : int {
         RHI_STENCIL_OP_KEEP = 0,
         RHI_STENCIL_OP_ZERO = 1,
         RHI_STENCIL_OP_REPLACE = 2,
@@ -1385,15 +1382,13 @@ namespace Sammi
         RHI_STENCIL_OP_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIVertexInputRate : int
-    {
+    enum RHIVertexInputRate : int {
         RHI_VERTEX_INPUT_RATE_VERTEX = 0,
         RHI_VERTEX_INPUT_RATE_INSTANCE = 1,
         RHI_VERTEX_INPUT_RATE_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIBlendFactor
-    {
+    enum RHIBlendFactor {
         RHI_BLEND_FACTOR_ZERO = 0,
         RHI_BLEND_FACTOR_ONE = 1,
         RHI_BLEND_FACTOR_SRC_COLOR = 2,
@@ -1416,8 +1411,7 @@ namespace Sammi
         RHI_BLEND_FACTOR_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIImageAspectFlagBits
-    {
+    enum RHIImageAspectFlagBits {
         RHI_IMAGE_ASPECT_COLOR_BIT = 0x00000001,
         RHI_IMAGE_ASPECT_DEPTH_BIT = 0x00000002,
         RHI_IMAGE_ASPECT_STENCIL_BIT = 0x00000004,
@@ -1435,8 +1429,7 @@ namespace Sammi
         RHI_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIBufferUsageFlagBits
-    {
+    enum RHIBufferUsageFlagBits {
         RHI_BUFFER_USAGE_TRANSFER_SRC_BIT = 0x00000001,
         RHI_BUFFER_USAGE_TRANSFER_DST_BIT = 0x00000002,
         RHI_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT = 0x00000004,
@@ -1459,8 +1452,7 @@ namespace Sammi
         RHI_BUFFER_USAGE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIMemoryPropertyFlagBits
-    {
+    enum RHIMemoryPropertyFlagBits {
         RHI_MEMORY_PROPERTY_DEVICE_LOCAL_BIT = 0x00000001,
         RHI_MEMORY_PROPERTY_HOST_VISIBLE_BIT = 0x00000002,
         RHI_MEMORY_PROPERTY_HOST_COHERENT_BIT = 0x00000004,
@@ -1473,8 +1465,7 @@ namespace Sammi
         RHI_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIPipelineStageFlagBits
-    {
+    enum RHIPipelineStageFlagBits {
         RHI_PIPELINE_STAGE_TOP_OF_PIPE_BIT = 0x00000001,
         RHI_PIPELINE_STAGE_DRAW_INDIRECT_BIT = 0x00000002,
         RHI_PIPELINE_STAGE_VERTEX_INPUT_BIT = 0x00000004,
@@ -1508,8 +1499,7 @@ namespace Sammi
         RHI_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIAccessFlagBits
-    {
+    enum RHIAccessFlagBits {
         RHI_ACCESS_INDIRECT_COMMAND_READ_BIT = 0x00000001,
         RHI_ACCESS_INDEX_READ_BIT = 0x00000002,
         RHI_ACCESS_VERTEX_ATTRIBUTE_READ_BIT = 0x00000004,
@@ -1545,8 +1535,7 @@ namespace Sammi
         RHI_ACCESS_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHICullModeFlagBits
-    {
+    enum RHICullModeFlagBits {
         RHI_CULL_MODE_NONE = 0,
         RHI_CULL_MODE_FRONT_BIT = 0x00000001,
         RHI_CULL_MODE_BACK_BIT = 0x00000002,
@@ -1554,8 +1543,7 @@ namespace Sammi
         RHI_CULL_MODE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIColorComponentFlagBits
-    {
+    enum RHIColorComponentFlagBits {
         RHI_COLOR_COMPONENT_R_BIT = 0x00000001,
         RHI_COLOR_COMPONENT_G_BIT = 0x00000002,
         RHI_COLOR_COMPONENT_B_BIT = 0x00000004,
@@ -1563,16 +1551,14 @@ namespace Sammi
         RHI_COLOR_COMPONENT_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHICommandPoolCreateFlagBits
-    {
+    enum RHICommandPoolCreateFlagBits {
         RHI_COMMAND_POOL_CREATE_TRANSIENT_BIT = 0x00000001,
         RHI_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT = 0x00000002,
         RHI_COMMAND_POOL_CREATE_PROTECTED_BIT = 0x00000004,
         RHI_COMMAND_POOL_CREATE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIImageUsageFlagBits
-    {
+    enum RHIImageUsageFlagBits {
         RHI_IMAGE_USAGE_TRANSFER_SRC_BIT = 0x00000001,
         RHI_IMAGE_USAGE_TRANSFER_DST_BIT = 0x00000002,
         RHI_IMAGE_USAGE_SAMPLED_BIT = 0x00000004,
@@ -1588,8 +1574,7 @@ namespace Sammi
         RHI_IMAGE_USAGE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIIndexType
-    {
+    enum RHIIndexType {
         RHI_INDEX_TYPE_UINT16 = 0,
         RHI_INDEX_TYPE_UINT32 = 1,
         RHI_INDEX_TYPE_NONE_KHR = 1000165000,
@@ -1598,21 +1583,18 @@ namespace Sammi
         RHI_INDEX_TYPE_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHISubpassContents
-    {
+    enum RHISubpassContents {
         RHI_SUBPASS_CONTENTS_INLINE = 0,
         RHI_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS = 1,
         RHI_SUBPASS_CONTENTS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHIFenceCreateFlagBits
-    {
+    enum RHIFenceCreateFlagBits {
         RHI_FENCE_CREATE_SIGNALED_BIT = 0x00000001,
         RHI_FENCE_CREATE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum RHICommandBufferUsageFlagBits
-    {
+    enum RHICommandBufferUsageFlagBits {
         RHI_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT = 0x00000001,
         RHI_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT = 0x00000002,
         RHI_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT = 0x00000004,
@@ -1699,12 +1681,12 @@ namespace Sammi
     typedef uint32_t RHISampleMask;
 }
 
-namespace Sammi
+namespace Piccolo
 {
-    enum class SAMMI_IMAGE_TYPE : uint8_t
+    enum class PICCOLO_IMAGE_TYPE : uint8_t
     {
-        SAMMI_IMAGE_TYPE_UNKNOWM = 0,
-        SAMMI_IMAGE_TYPE_2D
+        PICCOLO_IMAGE_TYPE_UNKNOWM = 0,
+        PICCOLO_IMAGE_TYPE_2D
     };
 
     enum class RENDER_PIPELINE_TYPE : uint8_t
@@ -1726,7 +1708,6 @@ namespace Sammi
             m_size = size;
             m_data = malloc(size);
         }
-
         ~BufferData()
         {
             if (m_data)
@@ -1734,7 +1715,6 @@ namespace Sammi
                 free(m_data);
             }
         }
-
         bool isValid() const { return m_data != nullptr; }
     };
 
@@ -1749,7 +1729,7 @@ namespace Sammi
         void*    m_pixels {nullptr};
 
         RHIFormat m_format = RHI_FORMAT_MAX_ENUM;
-        SAMMI_IMAGE_TYPE   m_type{ SAMMI_IMAGE_TYPE::SAMMI_IMAGE_TYPE_UNKNOWM };
+        PICCOLO_IMAGE_TYPE   m_type { PICCOLO_IMAGE_TYPE::PICCOLO_IMAGE_TYPE_UNKNOWM};
 
         TextureData() = default;
         ~TextureData()
@@ -1841,16 +1821,15 @@ namespace Sammi
         std::shared_ptr<TextureData> m_occlusion_texture;
         std::shared_ptr<TextureData> m_emissive_texture;
     };
-}
+} // namespace Piccolo
 
 template<>
-struct std::hash<Sammi::MeshSourceDesc>
+struct std::hash<Piccolo::MeshSourceDesc>
 {
-    size_t operator()(const Sammi::MeshSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
+    size_t operator()(const Piccolo::MeshSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
 };
-
 template<>
-struct std::hash<Sammi::MaterialSourceDesc>
+struct std::hash<Piccolo::MaterialSourceDesc>
 {
-    size_t operator()(const Sammi::MaterialSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
+    size_t operator()(const Piccolo::MaterialSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
 };

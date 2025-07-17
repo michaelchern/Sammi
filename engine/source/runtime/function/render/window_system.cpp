@@ -2,7 +2,7 @@
 
 #include "runtime/core/base/macro.h"
 
-namespace Sammi
+namespace Piccolo
 {
     WindowSystem::~WindowSystem()
     {
@@ -14,7 +14,7 @@ namespace Sammi
     {
         if (!glfwInit())
         {
-            LOG_FATAL(__FUNCTION__, "failed to initialize GLFW!");
+            LOG_FATAL(__FUNCTION__, "failed to initialize GLFW");
             return;
         }
 
@@ -25,7 +25,7 @@ namespace Sammi
         m_window = glfwCreateWindow(create_info.width, create_info.height, create_info.title, nullptr, nullptr);
         if (!m_window)
         {
-            LOG_FATAL(__FUNCTION__, "failed to create window!");
+            LOG_FATAL(__FUNCTION__, "failed to create window");
             glfwTerminate();
             return;
         }
@@ -61,4 +61,4 @@ namespace Sammi
         m_is_focus_mode = mode;
         glfwSetInputMode(m_window, GLFW_CURSOR, m_is_focus_mode ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
-}
+} // namespace Piccolo

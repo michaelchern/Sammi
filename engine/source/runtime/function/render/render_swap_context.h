@@ -13,7 +13,7 @@
 #include <optional>
 #include <string>
 
-namespace Piccolo
+namespace Sammi
 {
     struct LevelIBLResourceDesc
     {
@@ -128,4 +128,4 @@ namespace Piccolo
         bool isReadyToSwap() const;
         void swap();
     };
-} // namespace Piccolo
+}

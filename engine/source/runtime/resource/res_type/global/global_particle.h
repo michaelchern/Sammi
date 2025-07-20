@@ -2,7 +2,7 @@
 #include "runtime/core/math/vector3.h"
 #include "runtime/core/meta/reflection/reflection.h"
 
-namespace Piccolo
+namespace Sammi
 {
     REFLECTION_TYPE(GlobalParticleRes)
 
@@ -22,4 +22,4 @@ namespace Piccolo
         std::string m_particle_billboard_texture_path;
         std::string m_piccolo_logo_texture_path;
     };
-} // namespace Piccolo
+}

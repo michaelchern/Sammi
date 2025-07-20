@@ -7,7 +7,7 @@
 #include <array>
 #include "interface/rhi.h"
 
-namespace Piccolo
+namespace Sammi
 {
     struct MeshVertex
     {
@@ -81,4 +81,4 @@ namespace Piccolo
             return attribute_descriptions;
         }
     };
-} // namespace Piccolo
+}

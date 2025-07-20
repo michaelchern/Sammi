@@ -29,31 +29,36 @@ namespace Sammi
 
     void RenderSystem::initialize(RenderSystemInitInfo init_info)
     {
+        // 获取全局资源管理器（配置管理器和资产加载器）
         std::shared_ptr<ConfigManager> config_manager = g_runtime_global_context.m_config_manager;
         ASSERT(config_manager);
         std::shared_ptr<AssetManager> asset_manager = g_runtime_global_context.m_asset_manager;
         ASSERT(asset_manager);
 
-        // render context initialize
+        // -------------------- 步骤1：初始化RHI（渲染硬件接口） --------------------
         RHIInitInfo rhi_init_info;
-        rhi_init_info.window_system = init_info.window_system;
+        rhi_init_info.window_system = init_info.window_system;  // 设置窗口系统（用于创建交换链/窗口）
+        m_rhi = std::make_shared<VulkanRHI>();                  // 创建Vulkan实现
+        m_rhi->initialize(rhi_init_info);                       // 初始化Vulkan（创建实例/设备/队列等）
 
-        m_rhi = std::make_shared<VulkanRHI>();
-        m_rhi->initialize(rhi_init_info);
-
-        // global rendering resource
+        // -------------------- 步骤2：加载全局渲染资源 --------------------
+        // 加载全局资源到临时结构体
         GlobalRenderingRes global_rendering_res;
+        // 从配置获取全局渲染资源路径（如IBL贴图、颜色分级表等）
         const std::string& global_rendering_res_url = config_manager->getGlobalRenderingResUrl();
         asset_manager->loadAsset(global_rendering_res_url, global_rendering_res);
 
-        // upload ibl, color grading textures
+        // 上传全局渲染资源到GPU（如IBL环境贴图、BRDF积分图、颜色分级LUT）
         LevelResourceDesc level_resource_desc;
+        // 天空盒辐照度贴图
         level_resource_desc.m_ibl_resource_desc.m_skybox_irradiance_map = global_rendering_res.m_skybox_irradiance_map;
-        level_resource_desc.m_ibl_resource_desc.m_skybox_specular_map   = global_rendering_res.m_skybox_specular_map;
-        level_resource_desc.m_ibl_resource_desc.m_brdf_map              = global_rendering_res.m_brdf_map;
-        level_resource_desc.m_color_grading_resource_desc.m_color_grading_map =
-            global_rendering_res.m_color_grading_map;
-
+        // 天空盒预过滤贴图
+        level_resource_desc.m_ibl_resource_desc.m_skybox_specular_map = global_rendering_res.m_skybox_specular_map;
+        // BRDF积分图
+        level_resource_desc.m_ibl_resource_desc.m_brdf_map = global_rendering_res.m_brdf_map;
+        // 颜色分级贴图
+        level_resource_desc.m_color_grading_resource_desc.m_color_grading_map = global_rendering_res.m_color_grading_map;
+        // 创建渲染资源管理器
         m_render_resource = std::make_shared<RenderResource>();
         m_render_resource->uploadGlobalRenderResource(m_rhi, level_resource_desc);
 
@@ -442,4 +447,4 @@ namespace Sammi
             m_swap_context.resetEmitterTransformSwapData();
         }
     }
-} // namespace Piccolo
+}

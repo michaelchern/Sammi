@@ -10,10 +10,8 @@
 #include <map>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
-    
-
     class VulkanRHI final : public RHI
     {
     public:
@@ -311,4 +309,4 @@ namespace Piccolo
                    chooseSwapchainPresentModeFromDetails(const std::vector<VkPresentModeKHR>& available_present_modes);
         VkExtent2D chooseSwapchainExtentFromDetails(const VkSurfaceCapabilitiesKHR& capabilities);
     };
-} // namespace Piccolo
+}

@@ -19,15 +19,19 @@
 #include "runtime/function/render/render_system.h"
 #include "runtime/function/render/window_system.h"
 
-namespace Piccolo
+namespace Sammi
 {
+    // 全局上下文实例（单例模式，全局唯一访问入口）
     RuntimeGlobalContext g_runtime_global_context;
 
     void RuntimeGlobalContext::startSystems(const std::string& config_file_path)
     {
+        // 1. 配置管理器（优先初始化，其他系统可能需要读取配置）
+        // 负责解析配置文件（如窗口尺寸、物理参数、资源路径等）
         m_config_manager = std::make_shared<ConfigManager>();
         m_config_manager->initialize(config_file_path);
 
+        // 2. 文件系统（管理文件IO，其他系统可能需要读取资源文件）
         m_file_system = std::make_shared<FileSystem>();
 
         m_logger_system = std::make_shared<LogSystem>();

@@ -13,7 +13,7 @@
 
 #include <stdexcept>
 
-namespace Piccolo
+namespace Sammi
 {
     void RenderResource::clear()
     {
@@ -21,20 +21,26 @@ namespace Piccolo
 
     void RenderResource::uploadGlobalRenderResource(std::shared_ptr<RHI> rhi, LevelResourceDesc level_resource_desc)
     {
-        // create and map global storage buffer
+        // 创建并映射全局存储缓冲区（用于存储渲染所需的统一资源数据，如材质参数、光照配置等）
         createAndMapStorageBuffer(rhi);
 
-        // sky box irradiance
-        SkyBoxIrradianceMap skybox_irradiance_map        = level_resource_desc.m_ibl_resource_desc.m_skybox_irradiance_map;
-        std::shared_ptr<TextureData> irradiace_pos_x_map = loadTextureHDR(skybox_irradiance_map.m_positive_x_map);
-        std::shared_ptr<TextureData> irradiace_neg_x_map = loadTextureHDR(skybox_irradiance_map.m_negative_x_map);
-        std::shared_ptr<TextureData> irradiace_pos_y_map = loadTextureHDR(skybox_irradiance_map.m_positive_y_map);
-        std::shared_ptr<TextureData> irradiace_neg_y_map = loadTextureHDR(skybox_irradiance_map.m_negative_y_map);
-        std::shared_ptr<TextureData> irradiace_pos_z_map = loadTextureHDR(skybox_irradiance_map.m_positive_z_map);
-        std::shared_ptr<TextureData> irradiace_neg_z_map = loadTextureHDR(skybox_irradiance_map.m_negative_z_map);
+        // -------------------------- 天空盒辐照度（IBL辐照度）资源加载 --------------------------
+        // 从关卡资源描述中提取天空盒辐照度资源的配置信息
+        SkyBoxIrradianceMap skybox_irradiance_map = level_resource_desc.m_ibl_resource_desc.m_skybox_irradiance_map;
+        // 加载六个方向的HDR辐照度纹理（立方体贴图的六个面）
+        // 正负X/Y/Z方向对应天空盒的六个面，用于模拟环境光的漫反射贡献
+        std::shared_ptr<TextureData> irradiace_pos_x_map = loadTextureHDR(skybox_irradiance_map.m_positive_x_map);  // 右（+X）
+        std::shared_ptr<TextureData> irradiace_neg_x_map = loadTextureHDR(skybox_irradiance_map.m_negative_x_map);  // 左（-X）
+        std::shared_ptr<TextureData> irradiace_pos_y_map = loadTextureHDR(skybox_irradiance_map.m_positive_y_map);  // 上（+Y）
+        std::shared_ptr<TextureData> irradiace_neg_y_map = loadTextureHDR(skybox_irradiance_map.m_negative_y_map);  // 下（-Y）
+        std::shared_ptr<TextureData> irradiace_pos_z_map = loadTextureHDR(skybox_irradiance_map.m_positive_z_map);  // 前（+Z）
+        std::shared_ptr<TextureData> irradiace_neg_z_map = loadTextureHDR(skybox_irradiance_map.m_negative_z_map);  // 后（-Z）
 
-        // sky box specular
-        SkyBoxSpecularMap            skybox_specular_map = level_resource_desc.m_ibl_resource_desc.m_skybox_specular_map;
+        // -------------------------- 天空盒高光（IBL高光）资源加载 --------------------------
+        // 从关卡资源描述中提取天空盒高光资源的配置信息（用于镜面反射计算）
+        SkyBoxSpecularMap skybox_specular_map = level_resource_desc.m_ibl_resource_desc.m_skybox_specular_map;
+        // 加载六个方向的HDR高光纹理（立方体贴图的六个面）
+        // 高光纹理通常存储预计算的球谐系数或环境光遮蔽信息，用于快速计算镜面反射
         std::shared_ptr<TextureData> specular_pos_x_map  = loadTextureHDR(skybox_specular_map.m_positive_x_map);
         std::shared_ptr<TextureData> specular_neg_x_map  = loadTextureHDR(skybox_specular_map.m_negative_x_map);
         std::shared_ptr<TextureData> specular_pos_y_map  = loadTextureHDR(skybox_specular_map.m_positive_y_map);
@@ -42,28 +48,45 @@ namespace Piccolo
         std::shared_ptr<TextureData> specular_pos_z_map  = loadTextureHDR(skybox_specular_map.m_positive_z_map);
         std::shared_ptr<TextureData> specular_neg_z_map  = loadTextureHDR(skybox_specular_map.m_negative_z_map);
 
-        // brdf
+        // -------------------------- BRDF查找表（LUT）资源加载 --------------------------
+        // 加载BRDF预计算查找表（2D纹理），用于快速查询不同粗糙度和入射角下的BRDF值
+        // 避免在着色器中实时计算复杂的积分，提升渲染性能
         std::shared_ptr<TextureData> brdf_map = loadTextureHDR(level_resource_desc.m_ibl_resource_desc.m_brdf_map);
 
-        // create IBL samplers
+        // -------------------------- 创建IBL采样器 --------------------------
+        // 创建IBL相关纹理的采样器（如过滤方式、寻址模式等），确保纹理采样行为符合需求
         createIBLSamplers(rhi);
 
-        // create IBL textures, take care of the texture order
-        std::array<std::shared_ptr<TextureData>, 6> irradiance_maps = {irradiace_pos_x_map,
-                                                                       irradiace_neg_x_map,
-                                                                       irradiace_pos_z_map,
-                                                                       irradiace_neg_z_map,
-                                                                       irradiace_pos_y_map,
-                                                                       irradiace_neg_y_map};
-        std::array<std::shared_ptr<TextureData>, 6> specular_maps   = {specular_pos_x_map,
-                                                                     specular_neg_x_map,
-                                                                     specular_pos_z_map,
-                                                                     specular_neg_z_map,
-                                                                     specular_pos_y_map,
-                                                                     specular_neg_y_map};
+        // -------------------------- 创建IBL纹理（立方体贴图） --------------------------
+        // 注意：立方体贴图的六个面需要按特定顺序排列（取决于底层API的要求，如Vulkan的VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT）
+        // 辐照度纹理按 [右, 左, 前, 后, 上, 下] 顺序排列（可能适配某些API的立方体贴图面顺序要求）
+        std::array<std::shared_ptr<TextureData>, 6> irradiance_maps =
+        {
+            irradiace_pos_x_map,
+            irradiace_neg_x_map,
+            irradiace_pos_z_map,
+            irradiace_neg_z_map,
+            irradiace_pos_y_map,
+            irradiace_neg_y_map
+        };
+        // 高光纹理按 [右, 左, 前, 后, 上, 下] 顺序排列（与辐照度保持一致的面顺序）
+        std::array<std::shared_ptr<TextureData>, 6> specular_maps =
+        {
+            specular_pos_x_map,
+            specular_neg_x_map,
+            specular_pos_z_map,
+            specular_neg_z_map,
+            specular_pos_y_map,
+            specular_neg_y_map
+        };
+
+        // 创建IBL纹理对象（包含图像、图像视图和内存分配），将加载的HDR纹理上传至GPU
+        // 这些纹理将作为全局资源供后续着色器采样使用
         createIBLTextures(rhi, irradiance_maps, specular_maps);
 
-        // create brdf lut texture
+        // -------------------------- 创建BRDF LUT纹理 --------------------------
+        // 在GPU上创建BRDF查找表的全局图像资源（包含图像、视图和内存分配）
+        // 参数说明：图像对象、图像视图、内存分配句柄、宽度、高度、像素数据、纹理格式
         rhi->createGlobalImage(
             m_global_render_resource._ibl_resource._brdfLUT_texture_image,
             m_global_render_resource._ibl_resource._brdfLUT_texture_image_view,
@@ -73,11 +96,13 @@ namespace Piccolo
             brdf_map->m_pixels,
             brdf_map->m_format);
 
-        // color grading
-        std::shared_ptr<TextureData> color_grading_map =
-            loadTexture(level_resource_desc.m_color_grading_resource_desc.m_color_grading_map);
+        // -------------------------- 颜色分级（Color Grading）资源加载 --------------------------
+        // 加载颜色分级LUT纹理（用于调整画面的色调、对比度、饱和度等）
+        std::shared_ptr<TextureData> color_grading_map = loadTexture(level_resource_desc.m_color_grading_resource_desc.m_color_grading_map);
 
-        // create color grading texture
+        // -------------------------- 创建颜色分级LUT纹理 --------------------------
+        // 在GPU上创建颜色分级查找表的全局图像资源（包含图像、视图和内存分配）
+        // 该纹理将用于后期处理阶段，对最终画面进行颜色校正
         rhi->createGlobalImage(
             m_global_render_resource._color_grading_resource._color_grading_LUT_texture_image,
             m_global_render_resource._color_grading_resource._color_grading_LUT_texture_image_view,
@@ -88,78 +113,78 @@ namespace Piccolo
             color_grading_map->m_format);
     }
 
-    void RenderResource::uploadGameObjectRenderResource(std::shared_ptr<RHI> rhi,
-        RenderEntity         render_entity,
-        RenderMeshData       mesh_data,
-        RenderMaterialData   material_data)
+    void RenderResource::uploadGameObjectRenderResource(std::shared_ptr<RHI> rhi, RenderEntity render_entity, RenderMeshData mesh_data, RenderMaterialData material_data)
     {
         getOrCreateVulkanMesh(rhi, render_entity, mesh_data);
         getOrCreateVulkanMaterial(rhi, render_entity, material_data);
     }
 
-    void RenderResource::uploadGameObjectRenderResource(std::shared_ptr<RHI> rhi,
-        RenderEntity         render_entity,
-        RenderMeshData       mesh_data)
+    void RenderResource::uploadGameObjectRenderResource(std::shared_ptr<RHI> rhi, RenderEntity render_entity, RenderMeshData mesh_data)
     {
         getOrCreateVulkanMesh(rhi, render_entity, mesh_data);
     }
 
-    void RenderResource::uploadGameObjectRenderResource(std::shared_ptr<RHI> rhi,
-        RenderEntity         render_entity,
-        RenderMaterialData   material_data)
+    void RenderResource::uploadGameObjectRenderResource(std::shared_ptr<RHI> rhi, RenderEntity render_entity, RenderMaterialData material_data)
     {
         getOrCreateVulkanMaterial(rhi, render_entity, material_data);
     }
 
-    void RenderResource::updatePerFrameBuffer(std::shared_ptr<RenderScene>  render_scene,
-        std::shared_ptr<RenderCamera> camera)
+    void RenderResource::updatePerFrameBuffer(std::shared_ptr<RenderScene> render_scene, std::shared_ptr<RenderCamera> camera)
     {
-        Matrix4x4 view_matrix = camera->getViewMatrix();
-        Matrix4x4 proj_matrix = camera->getPersProjMatrix();
-        Vector3   camera_position = camera->position();
-        Matrix4x4 proj_view_matrix = proj_matrix * view_matrix;
+        // -------------------------- 相机矩阵计算 --------------------------
+        Matrix4x4 view_matrix = camera->getViewMatrix();         // 相机视图矩阵（世界空间→相机空间）
+        Matrix4x4 proj_matrix = camera->getPersProjMatrix();     // 相机透视投影矩阵（相机空间→裁剪空间）
+        Vector3   camera_position = camera->position();          // 相机在世界空间中的位置
+        Matrix4x4 proj_view_matrix = proj_matrix * view_matrix;  // 投影-视图复合矩阵（世界空间→裁剪空间）
 
-        // ambient light
-        Vector3  ambient_light = render_scene->m_ambient_light.m_irradiance;
-        uint32_t point_light_num = static_cast<uint32_t>(render_scene->m_point_light_list.m_lights.size());
+        // -------------------------- 光照数据提取 --------------------------
+        Vector3  ambient_light = render_scene->m_ambient_light.m_irradiance;                                 // 环境光辐照度（全局环境光照）
+        uint32_t point_light_num = static_cast<uint32_t>(render_scene->m_point_light_list.m_lights.size());  // 点光源数量
 
-        // set ubo data
-        m_particle_collision_perframe_storage_buffer_object.view_matrix      = view_matrix;
-        m_particle_collision_perframe_storage_buffer_object.proj_view_matrix = proj_view_matrix;
-        m_particle_collision_perframe_storage_buffer_object.proj_inv_matrix  = proj_matrix.inverse();
+        // -------------------------- 填充粒子碰撞通道UBO --------------------------
+        m_particle_collision_perframe_storage_buffer_object.view_matrix      = view_matrix;            // 视图矩阵
+        m_particle_collision_perframe_storage_buffer_object.proj_view_matrix = proj_view_matrix;       // 投影-视图矩阵
+        m_particle_collision_perframe_storage_buffer_object.proj_inv_matrix  = proj_matrix.inverse();  // 投影矩阵逆（用于深度解包等计算）
 
-        m_mesh_perframe_storage_buffer_object.proj_view_matrix = proj_view_matrix;
-        m_mesh_perframe_storage_buffer_object.camera_position = camera_position;
-        m_mesh_perframe_storage_buffer_object.ambient_light = ambient_light;
-        m_mesh_perframe_storage_buffer_object.point_light_num = point_light_num;
+        // -------------------------- 填充网格渲染通道UBO --------------------------
+        m_mesh_perframe_storage_buffer_object.proj_view_matrix = proj_view_matrix;  // 投影-视图矩阵（供顶点着色器使用）
+        m_mesh_perframe_storage_buffer_object.camera_position = camera_position;    // 相机位置（供光照计算使用）
+        m_mesh_perframe_storage_buffer_object.ambient_light = ambient_light;        // 环境光辐照度（供PBR计算使用）
+        m_mesh_perframe_storage_buffer_object.point_light_num = point_light_num;    // 点光源数量（用于循环上限）
 
+        // -------------------------- 填充点光源阴影通道UBO --------------------------
+        m_mesh_point_light_shadow_perframe_storage_buffer_object.point_light_num = point_light_num;  // 点光源数量
 
-        m_mesh_point_light_shadow_perframe_storage_buffer_object.point_light_num = point_light_num;
-        // point lights
+        // -------------------------- 遍历点光源数据 --------------------------
         for (uint32_t i = 0; i < point_light_num; i++)
         {
-            Vector3 point_light_position = render_scene->m_point_light_list.m_lights[i].m_position;
-            Vector3 point_light_intensity =
-                render_scene->m_point_light_list.m_lights[i].m_flux / (4.0f * Math_PI);
+            // 提取点光源位置和强度（强度通过光通量/4π归一化，符合PBR能量守恒）
+            Vector3 point_light_position  = render_scene->m_point_light_list.m_lights[i].m_position;
+            Vector3 point_light_intensity = render_scene->m_point_light_list.m_lights[i].m_flux / (4.0f * Math_PI);
 
+            // 计算点光源半径（根据光强和衰减参数动态调整，确保光照范围合理）
             float radius = render_scene->m_point_light_list.m_lights[i].calculateRadius();
 
+            // 填充网格渲染通道的点光源数组（供片段着色器采样）
             m_mesh_perframe_storage_buffer_object.scene_point_lights[i].position  = point_light_position;
             m_mesh_perframe_storage_buffer_object.scene_point_lights[i].radius    = radius;
             m_mesh_perframe_storage_buffer_object.scene_point_lights[i].intensity = point_light_intensity;
 
-            m_mesh_point_light_shadow_perframe_storage_buffer_object.point_lights_position_and_radius[i] =
-                Vector4(point_light_position, radius);
+            // 填充点光源阴影通道的位置-半径数据（用于阴影映射）
+            m_mesh_point_light_shadow_perframe_storage_buffer_object.point_lights_position_and_radius[i] = Vector4(point_light_position, radius);
         }
 
-        // directional light
-        m_mesh_perframe_storage_buffer_object.scene_directional_light.direction =
-            render_scene->m_directional_light.m_direction.normalisedCopy();
-        m_mesh_perframe_storage_buffer_object.scene_directional_light.color = render_scene->m_directional_light.m_color;
+        // -------------------------- 填充方向光数据 --------------------------
+        // 方向光方向（单位化）和颜色（供阴影计算和直接光照使用）
+        m_mesh_perframe_storage_buffer_object.scene_directional_light.direction = render_scene->m_directional_light.m_direction.normalisedCopy();
+        m_mesh_perframe_storage_buffer_object.scene_directional_light.color     = render_scene->m_directional_light.m_color;
 
-        // pick pass view projection matrix
+        // -------------------------- 填充拾取通道UBO --------------------------
+        // 拾取通道使用与主渲染相同的投影-视图矩阵（用于将屏幕坐标转换为世界坐标）
         m_mesh_inefficient_pick_perframe_storage_buffer_object.proj_view_matrix = proj_view_matrix;
 
+        // -------------------------- 填充粒子广告牌通道UBO --------------------------
+        // 广告牌需要相机方向信息以始终面向相机（右/前/上方向用于调整粒子朝向）
         m_particlebillboard_perframe_storage_buffer_object.proj_view_matrix = proj_view_matrix;
         m_particlebillboard_perframe_storage_buffer_object.right_direction  = camera->right();
         m_particlebillboard_perframe_storage_buffer_object.foward_direction = camera->forward();
@@ -168,40 +193,61 @@ namespace Piccolo
 
     void RenderResource::createIBLSamplers(std::shared_ptr<RHI> rhi)
     {
+        // 将共享指针转换为Vulkan RHI的具体实现指针（假设RHI的多态实现中，VulkanRHI是具体子类）
         VulkanRHI* raw_rhi = static_cast<VulkanRHI*>(rhi.get());
 
+        // -------------------------- 获取物理设备属性 --------------------------
         RHIPhysicalDeviceProperties physical_device_properties{};
         rhi->getPhysicalDeviceProperties(&physical_device_properties);
+        // 用于获取GPU支持的最大各向异性级别等参数（影响采样器配置）
 
+        // -------------------------- 初始化采样器创建信息 --------------------------
         RHISamplerCreateInfo samplerInfo{};
         samplerInfo.sType = RHI_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+
+        // 纹理过滤方式：放大/缩小均使用线性插值（平滑过渡，适合环境贴图）
         samplerInfo.magFilter = RHI_FILTER_LINEAR;
         samplerInfo.minFilter = RHI_FILTER_LINEAR;
+
+        // 纹理坐标超出[0,1]范围时的处理方式：边缘钳制（避免边缘黑边或重复）
         samplerInfo.addressModeU = RHI_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         samplerInfo.addressModeV = RHI_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         samplerInfo.addressModeW = RHI_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.anisotropyEnable = RHI_TRUE;                                                // close:false
-        samplerInfo.maxAnisotropy = physical_device_properties.limits.maxSamplerAnisotropy; // close :1.0f
+
+        // 启用各向异性过滤（提升纹理在视角倾斜时的采样质量）
+        samplerInfo.anisotropyEnable = RHI_TRUE;
+        // 最大各向异性级别（取自GPU支持的物理设备属性，通常为2的幂次，如4/8/16）
+        samplerInfo.maxAnisotropy = physical_device_properties.limits.maxSamplerAnisotropy;
+
+        // 边界颜色：当纹理坐标钳制到边缘时，使用不透明黑色（常见于环境贴图）
         samplerInfo.borderColor = RHI_BORDER_COLOR_INT_OPAQUE_BLACK;
+        // 是否使用非标准化坐标（此处使用标准化坐标[0,1]）
         samplerInfo.unnormalizedCoordinates = RHI_FALSE;
+        // 禁用深度比较（非阴影采样器，普通纹理采样不需要比较操作）
         samplerInfo.compareEnable = RHI_FALSE;
         samplerInfo.compareOp = RHI_COMPARE_OP_ALWAYS;
+        // Mipmap过滤方式：线性插值（平滑过渡不同Mip层级）
         samplerInfo.mipmapMode = RHI_SAMPLER_MIPMAP_MODE_LINEAR;
         samplerInfo.maxLod = 0.0f;
 
+        // -------------------------- 创建/更新BRDF LUT采样器 --------------------------
+        // BRDF LUT是2D纹理，通常不需要Mipmap（或仅单级），初始最大Lod设为0
         if (m_global_render_resource._ibl_resource._brdfLUT_texture_sampler != RHI_NULL_HANDLE)
         {
             rhi->destroySampler(m_global_render_resource._ibl_resource._brdfLUT_texture_sampler);
         }
 
+        // 创建新的BRDF LUT采样器（使用上述通用配置）
         if (rhi->createSampler(&samplerInfo, m_global_render_resource._ibl_resource._brdfLUT_texture_sampler) != RHI_SUCCESS)
         {
-            throw std::runtime_error("vk create sampler");
+            throw std::runtime_error("vk create sampler!");
         }
 
-        samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = 8.0f; // TODO: irradiance_texture_miplevels
-        samplerInfo.mipLodBias = 0.0f;
+        // -------------------------- 更新辐照度贴图采样器 --------------------------
+        // 辐照度贴图是立方体贴图，通常包含多级Mipmap（用于不同距离的采样）
+        samplerInfo.minLod = 0.0f;// 最小Mipmap层级（从0级开始）
+        samplerInfo.maxLod = 8.0f; // 最大Mipmap层级（假设辐照度贴图有8级，TODO需根据实际调整）
+        samplerInfo.mipLodBias = 0.0f;// Mipmap层级偏移（无额外偏移）  
 
         if (m_global_render_resource._ibl_resource._irradiance_texture_sampler != RHI_NULL_HANDLE)
         {
@@ -213,6 +259,8 @@ namespace Piccolo
             throw std::runtime_error("vk create sampler");
         }
 
+        // -------------------------- 更新高光贴图采样器 --------------------------
+        // 高光贴图（预计算的环境光遮蔽或球谐系数）通常与辐照度贴图使用相同采样配置
         if (m_global_render_resource._ibl_resource._specular_texture_sampler != RHI_NULL_HANDLE)
         {
             rhi->destroySampler(m_global_render_resource._ibl_resource._specular_texture_sampler);
@@ -224,15 +272,12 @@ namespace Piccolo
         }
     }
 
-    void RenderResource::createIBLTextures(std::shared_ptr<RHI>                        rhi,
-        std::array<std::shared_ptr<TextureData>, 6> irradiance_maps,
-        std::array<std::shared_ptr<TextureData>, 6> specular_maps)
+    void RenderResource::createIBLTextures(std::shared_ptr<RHI> rhi, std::array<std::shared_ptr<TextureData>, 6> irradiance_maps, std::array<std::shared_ptr<TextureData>, 6> specular_maps)
     {
-        // assume all textures have same width, height and format
-        uint32_t irradiance_cubemap_miplevels =
-            static_cast<uint32_t>(
-                std::floor(log2(std::max(irradiance_maps[0]->m_width, irradiance_maps[0]->m_height)))) +
-            1;
+        // -------------------------- 计算辐照度贴图的Mipmap层级数 --------------------------
+        // 辐照度贴图是立方体贴图，其Mipmap层级由宽高的最大值决定（log2(max(w,h))向下取整 +1）
+        uint32_t irradiance_cubemap_miplevels = static_cast<uint32_t>(std::floor(log2(std::max(irradiance_maps[0]->m_width, irradiance_maps[0]->m_height)))) + 1;
+
         rhi->createCubeMap(
             m_global_render_resource._ibl_resource._irradiance_texture_image,
             m_global_render_resource._ibl_resource._irradiance_texture_image_view,

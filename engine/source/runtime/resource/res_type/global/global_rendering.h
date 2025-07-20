@@ -6,7 +6,7 @@
 
 #include "runtime/resource/res_type/data/camera_config.h"
 
-namespace Piccolo
+namespace Sammi
 {
     REFLECTION_TYPE(SkyBoxIrradianceMap)
     CLASS(SkyBoxIrradianceMap, Fields)
@@ -63,4 +63,4 @@ namespace Piccolo
         CameraConfig     m_camera_config;
         DirectionalLight m_directional_light;
     };
-} // namespace Piccolo
+}

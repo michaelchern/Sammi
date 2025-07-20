@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace Piccolo
+namespace Sammi
 {
     void GameObjectResourceDesc::add(GameObjectDesc& desc) { m_game_object_descs.push_back(desc); }
 
@@ -166,4 +166,4 @@ namespace Piccolo
             m_emitter_transform_request = request;
         }
     }
-} // namespace Piccolo
+}

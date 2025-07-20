@@ -74,7 +74,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace Piccolo
+namespace Sammi
 {
     VulkanRHI::~VulkanRHI()
     {
@@ -632,9 +632,9 @@ namespace Piccolo
         // app info
         VkApplicationInfo appInfo {};
         appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName   = "piccolo_renderer";
+        appInfo.pApplicationName   = "sammi_renderer";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName        = "Piccolo";
+        appInfo.pEngineName        = "Sammi";
         appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion         = m_vulkan_api_version;
 

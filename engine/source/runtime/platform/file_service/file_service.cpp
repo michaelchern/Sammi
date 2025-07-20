@@ -2,7 +2,7 @@
 
 using namespace std;
 
-namespace Piccolo
+namespace Sammi
 {
     vector<filesystem::path> FileSystem::getFiles(const filesystem::path& directory)
     {

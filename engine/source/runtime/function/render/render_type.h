@@ -10,7 +10,7 @@
 /// <summary>
 /// RHI Type
 /// </summary>
-namespace Piccolo
+namespace Sammi
 {
 #define RHI_MAX_EXTENSION_NAME_SIZE        256U
 #define RHI_MAX_DESCRIPTION_SIZE           256U
@@ -1681,12 +1681,12 @@ namespace Piccolo
     typedef uint32_t RHISampleMask;
 }
 
-namespace Piccolo
+namespace Sammi
 {
-    enum class PICCOLO_IMAGE_TYPE : uint8_t
+    enum class SAMMI_IMAGE_TYPE : uint8_t
     {
-        PICCOLO_IMAGE_TYPE_UNKNOWM = 0,
-        PICCOLO_IMAGE_TYPE_2D
+        SAMMI_IMAGE_TYPE_UNKNOWM = 0,
+        SAMMI_IMAGE_TYPE_2D
     };
 
     enum class RENDER_PIPELINE_TYPE : uint8_t
@@ -1821,15 +1821,17 @@ namespace Piccolo
         std::shared_ptr<TextureData> m_occlusion_texture;
         std::shared_ptr<TextureData> m_emissive_texture;
     };
-} // namespace Piccolo
+}
+
 
 template<>
-struct std::hash<Piccolo::MeshSourceDesc>
+struct std::hash<Sammi::MeshSourceDesc>
 {
-    size_t operator()(const Piccolo::MeshSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
+    size_t operator()(const Sammi::MeshSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
 };
 template<>
-struct std::hash<Piccolo::MaterialSourceDesc>
+
+struct std::hash<Sammi::MaterialSourceDesc>
 {
-    size_t operator()(const Piccolo::MaterialSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
+    size_t operator()(const Sammi::MaterialSourceDesc& rhs) const noexcept { return rhs.getHashValue(); }
 };

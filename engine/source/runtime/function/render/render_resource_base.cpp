@@ -18,7 +18,7 @@
 #include <filesystem>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     std::shared_ptr<TextureData> RenderResourceBase::loadTextureHDR(std::string file, int desired_channels)
     {
@@ -340,4 +340,4 @@ namespace Piccolo
 
         return mesh_data;
     }
-} // namespace Piccolo
+}

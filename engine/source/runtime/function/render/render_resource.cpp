@@ -278,25 +278,31 @@ namespace Sammi
         // 辐照度贴图是立方体贴图，其Mipmap层级由宽高的最大值决定（log2(max(w,h))向下取整 +1）
         uint32_t irradiance_cubemap_miplevels = static_cast<uint32_t>(std::floor(log2(std::max(irradiance_maps[0]->m_width, irradiance_maps[0]->m_height)))) + 1;
 
+        // 调用Vulkan RHI接口创建立方体贴图：
+        // - 图像对象、视图对象、内存分配句柄（输出参数）
+        // - 宽高（立方体贴图每个面为正方形）
+        // - 六个面的像素数据（按顺序传入）
+        // - 格式（如R16G16B16A16_SFLOAT）
+        // - Mipmap层级数（用于生成所有层级的Mipmap）
         rhi->createCubeMap(
             m_global_render_resource._ibl_resource._irradiance_texture_image,
             m_global_render_resource._ibl_resource._irradiance_texture_image_view,
             m_global_render_resource._ibl_resource._irradiance_texture_image_allocation,
             irradiance_maps[0]->m_width,
             irradiance_maps[0]->m_height,
-            { irradiance_maps[0]->m_pixels,
-             irradiance_maps[1]->m_pixels,
-             irradiance_maps[2]->m_pixels,
-             irradiance_maps[3]->m_pixels,
-             irradiance_maps[4]->m_pixels,
-             irradiance_maps[5]->m_pixels },
-            irradiance_maps[0]->m_format,
-            irradiance_cubemap_miplevels);
+            { irradiance_maps[0]->m_pixels,   // +X面像素数据
+             irradiance_maps[1]->m_pixels,    // -X面像素数据
+             irradiance_maps[2]->m_pixels,    // +Z面像素数据
+             irradiance_maps[3]->m_pixels,    // -Z面像素数据
+             irradiance_maps[4]->m_pixels,    // +Y面像素数据
+             irradiance_maps[5]->m_pixels },  // -Y面像素数据
+            irradiance_maps[0]->m_format,     // 纹理格式
+            irradiance_cubemap_miplevels);    // Mipmap层级数
 
-        uint32_t specular_cubemap_miplevels =
-            static_cast<uint32_t>(
-                std::floor(log2(std::max(specular_maps[0]->m_width, specular_maps[0]->m_height)))) +
-            1;
+        // -------------------------- 计算高光贴图的Mipmap层级数 --------------------------
+        uint32_t specular_cubemap_miplevels = static_cast<uint32_t>(std::floor(log2(std::max(specular_maps[0]->m_width, specular_maps[0]->m_height)))) + 1;
+
+        // -------------------------- 创建高光贴图立方体贴图 --------------------------
         rhi->createCubeMap(
             m_global_render_resource._ibl_resource._specular_texture_image,
             m_global_render_resource._ibl_resource._specular_texture_image_view,
@@ -313,36 +319,39 @@ namespace Sammi
             specular_cubemap_miplevels);
     }
 
-    VulkanMesh&
-        RenderResource::getOrCreateVulkanMesh(std::shared_ptr<RHI> rhi, RenderEntity entity, RenderMeshData mesh_data)
+    VulkanMesh& RenderResource::getOrCreateVulkanMesh(std::shared_ptr<RHI> rhi, RenderEntity entity, RenderMeshData mesh_data)
     {
-        size_t assetid = entity.m_mesh_asset_id;
+        size_t assetid = entity.m_mesh_asset_id;  // 网格资源的唯一标识（资产ID）
 
-        auto it = m_vulkan_meshes.find(assetid);
-        if (it != m_vulkan_meshes.end())
+        // -------------------------- 检查资源是否已存在 --------------------------
+        auto it = m_vulkan_meshes.find(assetid);  // 在已管理的Vulkan网格映射中查找
+        if (it != m_vulkan_meshes.end())  // 若找到已存在的资源
         {
-            return it->second;
+            return it->second;  // 直接返回现有资源
         }
         else
         {
-            VulkanMesh temp;
-            auto       res = m_vulkan_meshes.insert(std::make_pair(assetid, std::move(temp)));
-            assert(res.second);
+            VulkanMesh temp; // 临时VulkanMesh对象（用于插入映射）
+            auto       res = m_vulkan_meshes.insert(std::make_pair(assetid, std::move(temp)));// 插入新资源到映射
+            assert(res.second);// 断言插入成功（避免重复插入）
 
-            uint32_t index_buffer_size = static_cast<uint32_t>(mesh_data.m_static_mesh_data.m_index_buffer->m_size);
-            void* index_buffer_data = mesh_data.m_static_mesh_data.m_index_buffer->m_data;
+            // -------------------------- 提取顶点/索引缓冲区数据 --------------------------
+            uint32_t index_buffer_size = static_cast<uint32_t>(mesh_data.m_static_mesh_data.m_index_buffer->m_size);  // 索引缓冲区大小（字节）
+            void* index_buffer_data = mesh_data.m_static_mesh_data.m_index_buffer->m_data;// 索引缓冲区数据指针
 
-            uint32_t vertex_buffer_size = static_cast<uint32_t>(mesh_data.m_static_mesh_data.m_vertex_buffer->m_size);
-            MeshVertexDataDefinition* vertex_buffer_data =
-                reinterpret_cast<MeshVertexDataDefinition*>(mesh_data.m_static_mesh_data.m_vertex_buffer->m_data);
+            uint32_t vertex_buffer_size = static_cast<uint32_t>(mesh_data.m_static_mesh_data.m_vertex_buffer->m_size);// 顶点缓冲区大小（字节）
+            MeshVertexDataDefinition* vertex_buffer_data = reinterpret_cast<MeshVertexDataDefinition*>(mesh_data.m_static_mesh_data.m_vertex_buffer->m_data);// 顶点缓冲区数据指针（转换为自定义结构体）
 
+            // -------------------------- 获取当前新创建的网格资源引用 --------------------------
             VulkanMesh& now_mesh = res.first->second;
 
-            if (mesh_data.m_skeleton_binding_buffer)
+            // -------------------------- 处理骨骼绑定数据（若有） --------------------------
+            if (mesh_data.m_skeleton_binding_buffer)  // 若存在骨骼绑定缓冲区（如角色模型的骨骼权重/索引）
             {
-                uint32_t joint_binding_buffer_size = (uint32_t)mesh_data.m_skeleton_binding_buffer->m_size;
-                MeshVertexBindingDataDefinition* joint_binding_buffer_data =
-                    reinterpret_cast<MeshVertexBindingDataDefinition*>(mesh_data.m_skeleton_binding_buffer->m_data);
+                uint32_t joint_binding_buffer_size = (uint32_t)mesh_data.m_skeleton_binding_buffer->m_size;  // 骨骼绑定缓冲区大小
+                MeshVertexBindingDataDefinition* joint_binding_buffer_data = reinterpret_cast<MeshVertexBindingDataDefinition*>(mesh_data.m_skeleton_binding_buffer->m_data);
+
+                // 调用更新函数，上传顶点/索引/骨骼数据到GPU（使用骨骼绑定数据）
                 updateMeshData(rhi,
                                true,
                                index_buffer_size,
@@ -355,6 +364,7 @@ namespace Sammi
             }
             else
             {
+                // 调用更新函数，仅上传顶点/索引数据（无骨骼绑定）
                 updateMeshData(rhi,
                                false,
                                index_buffer_size,
@@ -366,18 +376,19 @@ namespace Sammi
                                now_mesh);
             }
 
-            return now_mesh;
+            return now_mesh;  // 返回新创建的网格资源
         }
     }
 
-    VulkanPBRMaterial& RenderResource::getOrCreateVulkanMaterial(std::shared_ptr<RHI> rhi,
-        RenderEntity         entity,
-        RenderMaterialData   material_data)
+    VulkanPBRMaterial& RenderResource::getOrCreateVulkanMaterial(std::shared_ptr<RHI> rhi, RenderEntity entity, RenderMaterialData material_data)
     {
         VulkanRHI* vulkan_context = static_cast<VulkanRHI*>(rhi.get());
 
+        // 从材质实体中提取资产 ID（材质资源的唯一标识，用于缓存查找）
         size_t assetid = entity.m_material_asset_id;
 
+        // -------------------- 步骤 1：检查材质是否已缓存 --------------------
+        // 在已管理的 Vulkan PBR 材质容器中查找是否存在该资产的材质
         auto it = m_vulkan_pbr_materials.find(assetid);
         if (it != m_vulkan_pbr_materials.end())
         {
@@ -385,24 +396,33 @@ namespace Sammi
         }
         else
         {
+            // -------------------- 步骤 2：插入临时材质对象到容器 --------------------
             VulkanPBRMaterial temp;
-            auto              res = m_vulkan_pbr_materials.insert(std::make_pair(assetid, std::move(temp)));
+            // 插入新材质到容器（使用 emplace 或 insert 避免拷贝）
+            auto res = m_vulkan_pbr_materials.insert(std::make_pair(assetid, std::move(temp)));
             assert(res.second);
+
+            // -------------------- 步骤 3：初始化纹理相关参数（默认值 + 实际纹理数据） --------------------
+            // 以下为各类纹理（基础颜色、金属粗糙度等）的像素数据、尺寸和格式的初始化
+            // 默认使用 1x1 的灰色像素（RGBA 各通道 0.5f），格式为 SRGB（适合 sRGB 纹理空间）
 
             float empty_image[] = { 0.5f, 0.5f, 0.5f, 0.5f };
 
-            void* base_color_image_pixels = empty_image;
-            uint32_t           base_color_image_width = 1;
-            uint32_t           base_color_image_height = 1;
-            RHIFormat base_color_image_format = RHIFormat::RHI_FORMAT_R8G8B8A8_SRGB;
-            if (material_data.m_base_color_texture)
+            // 基础颜色纹理参数
+            void*     base_color_image_pixels = empty_image;  // 像素数据指针（默认空图像）
+            uint32_t  base_color_image_width  = 1;            // 纹理宽度（默认 1）
+            uint32_t  base_color_image_height = 1;            // 纹理高度（默认 1）
+            RHIFormat base_color_image_format = RHIFormat::RHI_FORMAT_R8G8B8A8_SRGB;  // 格式（默认 SRGB）
+            if (material_data.m_base_color_texture)           // 若存在基础颜色纹理
             {
+                // 使用实际纹理数据覆盖默认值
                 base_color_image_pixels = material_data.m_base_color_texture->m_pixels;
-                base_color_image_width = static_cast<uint32_t>(material_data.m_base_color_texture->m_width);
+                base_color_image_width  = static_cast<uint32_t>(material_data.m_base_color_texture->m_width);
                 base_color_image_height = static_cast<uint32_t>(material_data.m_base_color_texture->m_height);
                 base_color_image_format = material_data.m_base_color_texture->m_format;
             }
 
+            // 金属-粗糙度纹理参数（类似基础颜色纹理的处理逻辑）
             void* metallic_roughness_image_pixels = empty_image;
             uint32_t           metallic_roughness_width = 1;
             uint32_t           metallic_roughness_height = 1;
@@ -415,6 +435,7 @@ namespace Sammi
                 metallic_roughness_format = material_data.m_metallic_roughness_texture->m_format;
             }
 
+            // 法线-粗糙度纹理参数（注意：此处可能为笔误，通常法线纹理格式为 RGB，但按代码逻辑处理）
             void* normal_roughness_image_pixels = empty_image;
             uint32_t           normal_roughness_width = 1;
             uint32_t           normal_roughness_height = 1;
@@ -427,6 +448,7 @@ namespace Sammi
                 normal_roughness_format = material_data.m_normal_texture->m_format;
             }
 
+            // 遮挡纹理参数
             void* occlusion_image_pixels = empty_image;
             uint32_t           occlusion_image_width = 1;
             uint32_t           occlusion_image_height = 1;
@@ -439,6 +461,7 @@ namespace Sammi
                 occlusion_image_format = material_data.m_occlusion_texture->m_format;
             }
 
+            // 自发光纹理参数
             void* emissive_image_pixels = empty_image;
             uint32_t           emissive_image_width = 1;
             uint32_t           emissive_image_height = 1;
@@ -453,14 +476,14 @@ namespace Sammi
 
             VulkanPBRMaterial& now_material = res.first->second;
 
-            // similiarly to the vertex/index buffer, we should allocate the uniform
-            // buffer in DEVICE_LOCAL memory and use the temp stage buffer to copy the
-            // data
+            // -------------------- 步骤 4：初始化材质统一缓冲区（Uniform Buffer） --------------------
+            // 统一缓冲区用于存储材质参数（如混合标志、双面渲染、基色因子等），供着色器访问
             {
-                // temporary staging buffer
-
+                // 统一缓冲区大小（等于 MeshPerMaterialUniformBufferObject 结构体大小）
                 RHIDeviceSize buffer_size = sizeof(MeshPerMaterialUniformBufferObject);
 
+                // 创建临时暂存缓冲区（用于将数据从主机内存复制到 GPU 内存）
+                // 使用 HOST_VISIBLE 和 HOST_COHERENT 属性，允许主机直接读写且无需手动刷新缓存
                 RHIBuffer* inefficient_staging_buffer = RHI_NULL_HANDLE;
                 RHIDeviceMemory* inefficient_staging_buffer_memory = RHI_NULL_HANDLE;
                 rhi->createBuffer(
@@ -469,9 +492,8 @@ namespace Sammi
                     RHI_MEMORY_PROPERTY_HOST_VISIBLE_BIT | RHI_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                     inefficient_staging_buffer,
                     inefficient_staging_buffer_memory);
-                // RHI_BUFFER_USAGE_TRANSFER_SRC_BIT: buffer can be used as source in a
-                // memory transfer operation
 
+                // 映射暂存缓冲区内存到主机地址空间（获取指针以写入数据）
                 void* staging_buffer_data = nullptr;
                 rhi->mapMemory(
                     inefficient_staging_buffer_memory,
@@ -480,32 +502,36 @@ namespace Sammi
                     0,
                     &staging_buffer_data);
                 
-                MeshPerMaterialUniformBufferObject& material_uniform_buffer_info =
-                    (*static_cast<MeshPerMaterialUniformBufferObject*>(staging_buffer_data));
-                material_uniform_buffer_info.is_blend = entity.m_blend;
-                material_uniform_buffer_info.is_double_sided = entity.m_double_sided;
-                material_uniform_buffer_info.baseColorFactor = entity.m_base_color_factor;
-                material_uniform_buffer_info.metallicFactor = entity.m_metallic_factor;
-                material_uniform_buffer_info.roughnessFactor = entity.m_roughness_factor;
-                material_uniform_buffer_info.normalScale = entity.m_normal_scale;
-                material_uniform_buffer_info.occlusionStrength = entity.m_occlusion_strength;
-                material_uniform_buffer_info.emissiveFactor = entity.m_emissive_factor;
+                // 填充统一缓冲区数据（基于材质实体的属性）
+                MeshPerMaterialUniformBufferObject& material_uniform_buffer_info = (*static_cast<MeshPerMaterialUniformBufferObject*>(staging_buffer_data));
+                material_uniform_buffer_info.is_blend = entity.m_blend;// 是否启用混合
+                material_uniform_buffer_info.is_double_sided = entity.m_double_sided;// 是否双面渲染
+                material_uniform_buffer_info.baseColorFactor = entity.m_base_color_factor;// 基色因子（RGBA）
+                material_uniform_buffer_info.metallicFactor = entity.m_metallic_factor;// 金属度因子
+                material_uniform_buffer_info.roughnessFactor = entity.m_roughness_factor;// 粗糙度因子
+                material_uniform_buffer_info.normalScale = entity.m_normal_scale;// 法线贴图缩放
+                material_uniform_buffer_info.occlusionStrength = entity.m_occlusion_strength;// 遮挡强度
+                material_uniform_buffer_info.emissiveFactor = entity.m_emissive_factor;// 自发光因子
 
+                // 解除内存映射（释放主机端指针，数据已同步到 GPU）
                 rhi->unmapMemory(inefficient_staging_buffer_memory);
 
-                // use the vmaAllocator to allocate asset uniform buffer
+                // 创建 GPU 专用统一缓冲区（使用 VMA 库管理内存分配）
+                // 缓冲区用途：UNIFORM_BUFFER（着色器统一缓冲区） + TRANSFER_DST（接收传输数据）
                 RHIBufferCreateInfo bufferInfo = { RHI_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
                 bufferInfo.size = buffer_size;
                 bufferInfo.usage = RHI_BUFFER_USAGE_UNIFORM_BUFFER_BIT | RHI_BUFFER_USAGE_TRANSFER_DST_BIT;
 
+                // VMA 内存分配策略：仅 GPU 可见（避免 CPU 访问开销）
                 VmaAllocationCreateInfo allocInfo = {};
                 allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
+                // 分配缓冲区并绑定内存（使用对齐要求，满足 Vulkan 对齐约束）
                 rhi->createBufferWithAlignmentVMA(
-                    vulkan_context->m_assets_allocator,
-                    &bufferInfo,
-                    &allocInfo,
-                    m_global_render_resource._storage_buffer._min_uniform_buffer_offset_alignment,
+                    vulkan_context->m_assets_allocator,// VMA 分配器实例
+                    &bufferInfo,// 缓冲区创建信息
+                    &allocInfo,// 内存分配策略
+                    m_global_render_resource._storage_buffer._min_uniform_buffer_offset_alignment,// 最小对齐要求
                     now_material.material_uniform_buffer,
                     &now_material.material_uniform_buffer_allocation,
                     NULL);

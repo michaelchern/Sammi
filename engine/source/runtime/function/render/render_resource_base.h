@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace Piccolo
+namespace Sammi
 {
     class RHI;
     class RenderScene;
@@ -51,4 +51,4 @@ namespace Piccolo
 
         std::unordered_map<MeshSourceDesc, AxisAlignedBox> m_bounding_box_cache_map;
     };
-} // namespace Piccolo
+}

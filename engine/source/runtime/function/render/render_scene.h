@@ -1,8 +1,6 @@
-#pragma once
+ï»¿#pragma once
 
-// °üº¬ÔËĞĞÊ±¿ò¼ÜÖĞ¶ÔÏóID·ÖÅäÆ÷Í·ÎÄ¼ş
 #include "runtime/function/framework/object/object_id_allocator.h"
-
 #include "runtime/function/render/light.h"
 #include "runtime/function/render/render_common.h"
 #include "runtime/function/render/render_entity.h"
@@ -14,146 +12,146 @@
 
 namespace Sammi
 {
-    // Ç°ÖÃÉùÃ÷äÖÈ¾×ÊÔ´ºÍÏà»úÀà
+    // å‰ç½®å£°æ˜æ¸²æŸ“èµ„æºå’Œç›¸æœºç±»
     class RenderResource;
     class RenderCamera;
 
     /**
-     * @brief äÖÈ¾³¡¾°Àà£¬¸ºÔğ¹ÜÀí³¡¾°ÖĞËùÓĞÓëäÖÈ¾Ïà¹ØµÄ×ÊÔ´ºÍ¶ÔÏó
+     * @brief æ¸²æŸ“åœºæ™¯ç±»ï¼Œè´Ÿè´£ç®¡ç†åœºæ™¯ä¸­æ‰€æœ‰ä¸æ¸²æŸ“ç›¸å…³çš„èµ„æºå’Œå¯¹è±¡
      *
-     * ¸ÃÀàÊÇäÖÈ¾Ä£¿éµÄºËĞÄ¹ÜÀíÀà£¬Ö÷Òª¹¦ÄÜ°üÀ¨£º
-     * - ¹ÜÀí³¡¾°¹âÕÕ£¨»·¾³¹â¡¢·½Ïò¹â¡¢µã¹âÔ´£©
-     * - Î¬»¤³¡¾°ÖĞµÄäÖÈ¾ÊµÌå¼¯ºÏ
-     * - ¸ú×ÙÃ¿Ö¡¿É¼ûµÄäÖÈ¾¶ÔÏó£¨»ùÓÚ²»Í¬¹âÔ´»òÏà»úµÄ¿É¼ûĞÔ¼ÆËã£©
-     * - ¹ÜÀí×ÊÔ´ID·ÖÅä£¨ÊµÀıID¡¢Íø¸ñ×ÊÔ´ID¡¢²ÄÖÊ×ÊÔ´ID£©
-     * - Ìá¹©ÓëÓÎÏ·¶ÔÏóIDµÄÓ³Éä½Ó¿Ú
+     * è¯¥ç±»æ˜¯æ¸²æŸ“æ¨¡å—çš„æ ¸å¿ƒç®¡ç†ç±»ï¼Œä¸»è¦åŠŸèƒ½åŒ…æ‹¬ï¼š
+     * - ç®¡ç†åœºæ™¯å…‰ç…§ï¼ˆç¯å¢ƒå…‰ã€æ–¹å‘å…‰ã€ç‚¹å…‰æºï¼‰
+     * - ç»´æŠ¤åœºæ™¯ä¸­çš„æ¸²æŸ“å®ä½“é›†åˆ
+     * - è·Ÿè¸ªæ¯å¸§å¯è§çš„æ¸²æŸ“å¯¹è±¡ï¼ˆåŸºäºä¸åŒå…‰æºæˆ–ç›¸æœºçš„å¯è§æ€§è®¡ç®—ï¼‰
+     * - ç®¡ç†èµ„æºIDåˆ†é…ï¼ˆå®ä¾‹IDã€ç½‘æ ¼èµ„æºIDã€æè´¨èµ„æºIDï¼‰
+     * - æä¾›ä¸æ¸¸æˆå¯¹è±¡IDçš„æ˜ å°„æ¥å£
      */
     class RenderScene
     {
     public:
-        // ====================== ¹âÕÕÏà¹Ø³ÉÔ± ======================
-        AmbientLight      m_ambient_light;     // ³¡¾°»·¾³¹â£¨È«¾Ö»ù´¡ÕÕÃ÷£©
-        PDirectionalLight m_directional_light;  // ·½Ïò¹âÖ¸Õë£¨Ä£ÄâÌ«Ñô¹âµÈÆ½ĞĞ¹âÔ´£©
-        PointLightList    m_point_light_list;   // µã¹âÔ´ÁĞ±í£¨´æ´¢¶à¸öµã¹âÔ´¶ÔÏó£©
+        // ====================== å…‰ç…§ç›¸å…³æˆå‘˜ ======================
+        AmbientLight      m_ambient_light;      // åœºæ™¯ç¯å¢ƒå…‰ï¼ˆå…¨å±€åŸºç¡€ç…§æ˜ï¼‰
+        PDirectionalLight m_directional_light;  // æ–¹å‘å…‰æŒ‡é’ˆï¼ˆæ¨¡æ‹Ÿå¤ªé˜³å…‰ç­‰å¹³è¡Œå…‰æºï¼‰
+        PointLightList    m_point_light_list;   // ç‚¹å…‰æºåˆ—è¡¨ï¼ˆå­˜å‚¨å¤šä¸ªç‚¹å…‰æºå¯¹è±¡ï¼‰
 
-        // ====================== äÖÈ¾ÊµÌå ======================
-        std::vector<RenderEntity> m_render_entities;  // ³¡¾°ÖĞËùÓĞ´ıäÖÈ¾µÄÊµÌå¼¯ºÏ
+        // ====================== æ¸²æŸ“å®ä½“ ======================
+        std::vector<RenderEntity> m_render_entities;  // åœºæ™¯ä¸­æ‰€æœ‰å¾…æ¸²æŸ“çš„å®ä½“é›†åˆ
 
-        // ====================== ±à¼­Æ÷¸¨Öú¶ÔÏó ======================
-        std::optional<RenderEntity> m_render_axis;  // ¿ÉÑ¡äÖÈ¾ÖáÊµÌå£¨±à¼­Æ÷Ä£Ê½ÏÂÏÔÊ¾×ø±êÖá£©
+        // ====================== ç¼–è¾‘å™¨è¾…åŠ©å¯¹è±¡ ======================
+        std::optional<RenderEntity> m_render_axis;  // å¯é€‰æ¸²æŸ“è½´å®ä½“ï¼ˆç¼–è¾‘å™¨æ¨¡å¼ä¸‹æ˜¾ç¤ºåæ ‡è½´ï¼‰
 
-        // ====================== Ã¿Ö¡¿É¼û¶ÔÏó£¨¶¯Ì¬¸üĞÂ£© ======================
-        // ²»Í¬¹âÔ´»òÏà»ú¿É¼ûµÄÍø¸ñ½Úµã¼¯ºÏ£¨ÓÃÓÚäÖÈ¾Í¨µÀÉ¸Ñ¡¿É¼û¶ÔÏó£©
-        std::vector<RenderMeshNode> m_directional_light_visible_mesh_nodes;// ·½Ïò¹â¿É¼ûµÄÍø¸ñ½Úµã
-        std::vector<RenderMeshNode> m_point_lights_visible_mesh_nodes;// µã¹âÔ´¿É¼ûµÄÍø¸ñ½Úµã
-        std::vector<RenderMeshNode> m_main_camera_visible_mesh_nodes;// Ö÷Ïà»ú¿É¼ûµÄÍø¸ñ½Úµã
-        RenderAxisNode              m_axis_node;// Öá½Úµã£¨±à¼­Æ÷ÏÔÊ¾ÓÃ£©
+        // ====================== æ¯å¸§å¯è§å¯¹è±¡ï¼ˆåŠ¨æ€æ›´æ–°ï¼‰ ======================
+        // ä¸åŒå…‰æºæˆ–ç›¸æœºå¯è§çš„ç½‘æ ¼èŠ‚ç‚¹é›†åˆï¼ˆç”¨äºæ¸²æŸ“é€šé“ç­›é€‰å¯è§å¯¹è±¡ï¼‰
+        std::vector<RenderMeshNode> m_directional_light_visible_mesh_nodes;  // æ–¹å‘å…‰å¯è§çš„ç½‘æ ¼èŠ‚ç‚¹
+        std::vector<RenderMeshNode> m_point_lights_visible_mesh_nodes;       // ç‚¹å…‰æºå¯è§çš„ç½‘æ ¼èŠ‚ç‚¹
+        std::vector<RenderMeshNode> m_main_camera_visible_mesh_nodes;        // ä¸»ç›¸æœºå¯è§çš„ç½‘æ ¼èŠ‚ç‚¹
+        RenderAxisNode              m_axis_node;                             // è½´èŠ‚ç‚¹ï¼ˆç¼–è¾‘å™¨æ˜¾ç¤ºç”¨ï¼‰
 
-        // ====================== ÇåÀíÓë¸üĞÂ½Ó¿Ú ======================
+        // ====================== æ¸…ç†ä¸æ›´æ–°æ¥å£ ======================
         /**
-         * @brief Çå¿Õ³¡¾°ËùÓĞ×ÊÔ´ÓëÊı¾İ
-         * ÖØÖÃ¹âÕÕ¡¢ÊµÌåÁĞ±í¡¢¿É¼û¶ÔÏóµÈ³ÉÔ±£¬ÓÃÓÚ³¡¾°ÖØÖÃ»òÇĞ»»
+         * @brief æ¸…ç©ºåœºæ™¯æ‰€æœ‰èµ„æºä¸æ•°æ®
+         * é‡ç½®å…‰ç…§ã€å®ä½“åˆ—è¡¨ã€å¯è§å¯¹è±¡ç­‰æˆå‘˜ï¼Œç”¨äºåœºæ™¯é‡ç½®æˆ–åˆ‡æ¢
          */
         void clear();
 
         /**
-         * @brief ¸üĞÂµ±Ç°Ö¡¿É¼û¶ÔÏó£¨ºËĞÄ¿É¼ûĞÔ¼ÆËãº¯Êı£©
-         * @param render_resource äÖÈ¾×ÊÔ´¹ÜÀíÆ÷£¨Ìá¹©Íø¸ñ/²ÄÖÊµÈ×ÊÔ´·ÃÎÊ£©
-         * @param camera µ±Ç°Ê¹ÓÃµÄÏà»ú£¨¾ö¶¨ÊÓÍ¼Í¶Ó°¾ØÕó£©
-         * ÄÚ²¿»á¸ù¾İ²»Í¬äÖÈ¾½×¶Î£¨¹âÕÕ¿É¼ûĞÔ¡¢Ïà»ú¿É¼ûĞÔ£©µ÷ÓÃ¾ßÌåÊµÏÖ
+         * @brief æ›´æ–°å½“å‰å¸§å¯è§å¯¹è±¡ï¼ˆæ ¸å¿ƒå¯è§æ€§è®¡ç®—å‡½æ•°ï¼‰
+         * @param render_resource æ¸²æŸ“èµ„æºç®¡ç†å™¨ï¼ˆæä¾›ç½‘æ ¼/æè´¨ç­‰èµ„æºè®¿é—®ï¼‰
+         * @param camera å½“å‰ä½¿ç”¨çš„ç›¸æœºï¼ˆå†³å®šè§†å›¾æŠ•å½±çŸ©é˜µï¼‰
+         * å†…éƒ¨ä¼šæ ¹æ®ä¸åŒæ¸²æŸ“é˜¶æ®µï¼ˆå…‰ç…§å¯è§æ€§ã€ç›¸æœºå¯è§æ€§ï¼‰è°ƒç”¨å…·ä½“å®ç°
          */
         void updateVisibleObjects(std::shared_ptr<RenderResource> render_resource, std::shared_ptr<RenderCamera> camera);
 
         /**
-         * @brief ÉèÖÃ¿É¼û½ÚµãÔÚäÖÈ¾Í¨µÀÖĞµÄÒıÓÃ
-         * ¹©ºóĞøäÖÈ¾Á÷³Ì£¨Èç»æÖÆµ÷ÓÃ£©Ö±½Ó·ÃÎÊÒÑ¼ÆËãµÄ¿É¼û¶ÔÏó¼¯ºÏ
+         * @brief è®¾ç½®å¯è§èŠ‚ç‚¹åœ¨æ¸²æŸ“é€šé“ä¸­çš„å¼•ç”¨
+         * ä¾›åç»­æ¸²æŸ“æµç¨‹ï¼ˆå¦‚ç»˜åˆ¶è°ƒç”¨ï¼‰ç›´æ¥è®¿é—®å·²è®¡ç®—çš„å¯è§å¯¹è±¡é›†åˆ
          */
         void setVisibleNodesReference();
 
-        // ====================== ID·ÖÅäÆ÷¹ÜÀí ======================
+        // ====================== IDåˆ†é…å™¨ç®¡ç† ======================
         /**
-         * @brief »ñÈ¡ÊµÀıID·ÖÅäÆ÷£¨¹ÜÀíGameObjectPartIdÀàĞÍµÄÎ¨Ò»±êÊ¶£©
-         * @return ÊµÀıID·ÖÅäÆ÷ÒıÓÃ
+         * @brief è·å–å®ä¾‹IDåˆ†é…å™¨ï¼ˆç®¡ç†GameObjectPartIdç±»å‹çš„å”¯ä¸€æ ‡è¯†ï¼‰
+         * @return å®ä¾‹IDåˆ†é…å™¨å¼•ç”¨
          */
         GuidAllocator<GameObjectPartId>& getInstanceIdAllocator();
 
         /**
-         * @brief »ñÈ¡Íø¸ñ×ÊÔ´ID·ÖÅäÆ÷£¨¹ÜÀíMeshSourceDescÀàĞÍµÄÎ¨Ò»±êÊ¶£©
-         * @return Íø¸ñ×ÊÔ´ID·ÖÅäÆ÷ÒıÓÃ
+         * @brief è·å–ç½‘æ ¼èµ„æºIDåˆ†é…å™¨ï¼ˆç®¡ç†MeshSourceDescç±»å‹çš„å”¯ä¸€æ ‡è¯†ï¼‰
+         * @return ç½‘æ ¼èµ„æºIDåˆ†é…å™¨å¼•ç”¨
          */
         GuidAllocator<MeshSourceDesc>& getMeshAssetIdAllocator();
 
         /**
-         * @brief »ñÈ¡²ÄÖÊ×ÊÔ´ID·ÖÅäÆ÷£¨¹ÜÀíMaterialSourceDescÀàĞÍµÄÎ¨Ò»±êÊ¶£©
-         * @return ²ÄÖÊ×ÊÔ´ID·ÖÅäÆ÷ÒıÓÃ
-		 */
+         * @brief è·å–æè´¨èµ„æºIDåˆ†é…å™¨ï¼ˆç®¡ç†MaterialSourceDescç±»å‹çš„å”¯ä¸€æ ‡è¯†ï¼‰
+         * @return æè´¨èµ„æºIDåˆ†é…å™¨å¼•ç”¨
+         */
         GuidAllocator<MaterialSourceDesc>& getMaterialAssetdAllocator();
 
-        // ====================== ÓÎÏ·¶ÔÏóÓëäÖÈ¾¶ÔÏóÓ³Éä ======================
+        // ====================== æ¸¸æˆå¯¹è±¡ä¸æ¸²æŸ“å¯¹è±¡æ˜ å°„ ======================
         /**
-         * @brief ¼ÇÂ¼Íø¸ñIDµ½ÓÎÏ·¶ÔÏóIDµÄÓ³Éä¹ØÏµ
-         * @param instance_id äÖÈ¾ÊµÀıID£¨¶ÔÓ¦Íø¸ñ×ÊÔ´µÄÊµÀı£©
-         * @param go_id ¹ØÁªµÄÓÎÏ·¶ÔÏóID£¨GameObjectID£©
+         * @brief è®°å½•ç½‘æ ¼IDåˆ°æ¸¸æˆå¯¹è±¡IDçš„æ˜ å°„å…³ç³»
+         * @param instance_id æ¸²æŸ“å®ä¾‹IDï¼ˆå¯¹åº”ç½‘æ ¼èµ„æºçš„å®ä¾‹ï¼‰
+         * @param go_id å…³è”çš„æ¸¸æˆå¯¹è±¡IDï¼ˆGameObjectIDï¼‰
          */
         void addInstanceIdToMap(uint32_t instance_id, GObjectID go_id);
 
         /**
-         * @brief Í¨¹ıÍø¸ñID²éÑ¯¶ÔÓ¦µÄÓÎÏ·¶ÔÏóID
-         * @param mesh_id Íø¸ñ×ÊÔ´ID£¨¶ÔÓ¦MeshSourceDescµÄÎ¨Ò»±êÊ¶£©
-         * @return ¹ØÁªµÄÓÎÏ·¶ÔÏóID£¨Èô²»´æÔÚÔò·µ»ØÄ¬ÈÏ¹¹ÔìµÄGObjectID£©
+         * @brief é€šè¿‡ç½‘æ ¼IDæŸ¥è¯¢å¯¹åº”çš„æ¸¸æˆå¯¹è±¡ID
+         * @param mesh_id ç½‘æ ¼èµ„æºIDï¼ˆå¯¹åº”MeshSourceDescçš„å”¯ä¸€æ ‡è¯†ï¼‰
+         * @return å…³è”çš„æ¸¸æˆå¯¹è±¡IDï¼ˆè‹¥ä¸å­˜åœ¨åˆ™è¿”å›é»˜è®¤æ„é€ çš„GObjectIDï¼‰
          */
         GObjectID getGObjectIDByMeshID(uint32_t mesh_id) const;
 
         /**
-         * @brief ¸ù¾İÓÎÏ·¶ÔÏóIDÉ¾³ı¶ÔÓ¦ÊµÌå
-         * @param go_id ĞèÒªÉ¾³ıµÄÓÎÏ·¶ÔÏóID
+         * @brief æ ¹æ®æ¸¸æˆå¯¹è±¡IDåˆ é™¤å¯¹åº”å®ä½“
+         * @param go_id éœ€è¦åˆ é™¤çš„æ¸¸æˆå¯¹è±¡ID
          */
         void deleteEntityByGObjectID(GObjectID go_id);
 
         /**
-         * @brief Çå³ı³¡¾°Êı¾İ£¨ÓÃÓÚ¹Ø¿¨ÖØĞÂ¼ÓÔØÇ°µÄÇåÀí£©
-         * ÊÍ·ÅËùÓĞäÖÈ¾×ÊÔ´ÒıÓÃ£¬ÖØÖÃID·ÖÅäÆ÷£¬Çå¿ÕÊµÌåºÍ¿É¼û¶ÔÏó¼¯ºÏ
+         * @brief æ¸…é™¤åœºæ™¯æ•°æ®ï¼ˆç”¨äºå…³å¡é‡æ–°åŠ è½½å‰çš„æ¸…ç†ï¼‰
+         * é‡Šæ”¾æ‰€æœ‰æ¸²æŸ“èµ„æºå¼•ç”¨ï¼Œé‡ç½®IDåˆ†é…å™¨ï¼Œæ¸…ç©ºå®ä½“å’Œå¯è§å¯¹è±¡é›†åˆ
          */
         void clearForLevelReloading();
 
     private:
-        // ====================== Ë½ÓĞ³ÉÔ±±äÁ¿ ======================
-        GuidAllocator<GameObjectPartId>   m_instance_id_allocator;    // ÊµÀıID·ÖÅäÆ÷£¨¹ÜÀíGameObjectPartId£©
-        GuidAllocator<MeshSourceDesc>     m_mesh_asset_id_allocator;  // Íø¸ñ×ÊÔ´ID·ÖÅäÆ÷£¨¹ÜÀíMeshSourceDesc£©
-        GuidAllocator<MaterialSourceDesc> m_material_asset_id_allocator;// ²ÄÖÊ×ÊÔ´ID·ÖÅäÆ÷£¨¹ÜÀíMaterialSourceDesc£©
-        // Íø¸ñIDµ½ÓÎÏ·¶ÔÏóIDµÄ¿ìËÙÓ³Éä±í
+        // ====================== ç§æœ‰æˆå‘˜å˜é‡ ======================
+        GuidAllocator<GameObjectPartId>   m_instance_id_allocator;        // å®ä¾‹IDåˆ†é…å™¨ï¼ˆç®¡ç†GameObjectPartIdï¼‰
+        GuidAllocator<MeshSourceDesc>     m_mesh_asset_id_allocator;      // ç½‘æ ¼èµ„æºIDåˆ†é…å™¨ï¼ˆç®¡ç†MeshSourceDescï¼‰
+        GuidAllocator<MaterialSourceDesc> m_material_asset_id_allocator;  // æè´¨èµ„æºIDåˆ†é…å™¨ï¼ˆç®¡ç†MaterialSourceDescï¼‰
+        // ç½‘æ ¼IDåˆ°æ¸¸æˆå¯¹è±¡IDçš„å¿«é€Ÿæ˜ å°„è¡¨
         std::unordered_map<uint32_t, GObjectID> m_mesh_object_id_map;
 
-        // ====================== ¿É¼ûĞÔ¸üĞÂË½ÓĞÊµÏÖ ======================
+        // ====================== å¯è§æ€§æ›´æ–°ç§æœ‰å®ç° ======================
         /**
-         * @brief ¸üĞÂ·½Ïò¹â¿É¼ûµÄÍø¸ñ½Úµã£¨»ùÓÚÒõÓ°Í¶Éä»òÊÓ×¶Ìå²Ã¼ô£©
-         * @param render_resource äÖÈ¾×ÊÔ´¹ÜÀíÆ÷
-         * @param camera µ±Ç°Ïà»ú
+         * @brief æ›´æ–°æ–¹å‘å…‰å¯è§çš„ç½‘æ ¼èŠ‚ç‚¹ï¼ˆåŸºäºé˜´å½±æŠ•å°„æˆ–è§†é”¥ä½“è£å‰ªï¼‰
+         * @param render_resource æ¸²æŸ“èµ„æºç®¡ç†å™¨
+         * @param camera å½“å‰ç›¸æœº
          */
         void updateVisibleObjectsDirectionalLight(std::shared_ptr<RenderResource> render_resource, std::shared_ptr<RenderCamera> camera);
 
         /**
-         * @brief ¸üĞÂµã¹âÔ´¿É¼ûµÄÍø¸ñ½Úµã£¨Í¨³£½áºÏ¹âÕÕÌ½Õë»òÖğÏñËØ¼ÆËã£©
-         * @param render_resource äÖÈ¾×ÊÔ´¹ÜÀíÆ÷
+         * @brief æ›´æ–°ç‚¹å…‰æºå¯è§çš„ç½‘æ ¼èŠ‚ç‚¹ï¼ˆé€šå¸¸ç»“åˆå…‰ç…§æ¢é’ˆæˆ–é€åƒç´ è®¡ç®—ï¼‰
+         * @param render_resource æ¸²æŸ“èµ„æºç®¡ç†å™¨
          */
         void updateVisibleObjectsPointLight(std::shared_ptr<RenderResource> render_resource);
 
         /**
-         * @brief ¸üĞÂÖ÷Ïà»ú¿É¼ûµÄÍø¸ñ½Úµã£¨»ùÓÚÏà»úÊÓ×¶Ìå²Ã¼ô£©
-         * @param render_resource äÖÈ¾×ÊÔ´¹ÜÀíÆ÷
-         * @param camera Ö÷Ïà»ú¶ÔÏó
+         * @brief æ›´æ–°ä¸»ç›¸æœºå¯è§çš„ç½‘æ ¼èŠ‚ç‚¹ï¼ˆåŸºäºç›¸æœºè§†é”¥ä½“è£å‰ªï¼‰
+         * @param render_resource æ¸²æŸ“èµ„æºç®¡ç†å™¨
+         * @param camera ä¸»ç›¸æœºå¯¹è±¡
          */
         void updateVisibleObjectsMainCamera(std::shared_ptr<RenderResource> render_resource, std::shared_ptr<RenderCamera> camera);
 
         /**
-         * @brief ¸üĞÂÖá¶ÔÏóµÄ¿É¼ûĞÔ£¨±à¼­Æ÷Ä£Ê½ÏÂÊ¼ÖÕ¿É¼û»ò¸ù¾İÉèÖÃ¿ØÖÆ£©
-         * @param render_resource äÖÈ¾×ÊÔ´¹ÜÀíÆ÷
+         * @brief æ›´æ–°è½´å¯¹è±¡çš„å¯è§æ€§ï¼ˆç¼–è¾‘å™¨æ¨¡å¼ä¸‹å§‹ç»ˆå¯è§æˆ–æ ¹æ®è®¾ç½®æ§åˆ¶ï¼‰
+         * @param render_resource æ¸²æŸ“èµ„æºç®¡ç†å™¨
          */
         void updateVisibleObjectsAxis(std::shared_ptr<RenderResource> render_resource);
 
         /**
-         * @brief ¸üĞÂÁ£×ÓÏµÍ³µÄ¿É¼ûĞÔ£¨Ô¤Áô½Ó¿Ú£¬µ±Ç°Î´ÊµÏÖ¾ßÌåÂß¼­£©
-         * @param render_resource äÖÈ¾×ÊÔ´¹ÜÀíÆ÷
+         * @brief æ›´æ–°ç²’å­ç³»ç»Ÿçš„å¯è§æ€§ï¼ˆé¢„ç•™æ¥å£ï¼Œå½“å‰æœªå®ç°å…·ä½“é€»è¾‘ï¼‰
+         * @param render_resource æ¸²æŸ“èµ„æºç®¡ç†å™¨
          */
         void updateVisibleObjectsParticle(std::shared_ptr<RenderResource> render_resource);
     };

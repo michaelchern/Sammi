@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     void PointLightShadowPass::initialize(const RenderPassInitInfo* init_info)
     {

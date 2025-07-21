@@ -1,5 +1,4 @@
 #include "common/precompiled.h"
-
 #include "meta_utils.h"
 
 static int parse_flag = 0;

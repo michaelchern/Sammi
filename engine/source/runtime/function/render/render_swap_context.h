@@ -4,7 +4,6 @@
 #include "runtime/function/particle/particle_desc.h"
 #include "runtime/function/render/render_camera.h"
 #include "runtime/function/render/render_object.h"
-
 #include "runtime/resource/res_type/global/global_particle.h"
 #include "runtime/resource/res_type/global/global_rendering.h"
 

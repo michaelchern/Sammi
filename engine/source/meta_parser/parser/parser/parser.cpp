@@ -1,10 +1,7 @@
 #include "common/precompiled.h"
-
 #include "language_types/class.h"
-
 #include "generator/reflection_generator.h"
 #include "generator/serializer_generator.h"
-
 #include "parser.h"
 
 #define RECURSE_NAMESPACES(kind, cursor, method, namespaces) \

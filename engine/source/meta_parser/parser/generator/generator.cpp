@@ -72,4 +72,4 @@ namespace Generator
             method_defs.push_back(method_define);
         }
     }
-} // namespace Generator
+}

@@ -2,7 +2,7 @@
 
 #include "runtime/function/render/render_pass.h"
 
-namespace Piccolo
+namespace Sammi
 {
     class WindowUI;
 
@@ -24,4 +24,4 @@ namespace Piccolo
     private:
         WindowUI* m_window_ui;
     };
-} // namespace Piccolo
+}

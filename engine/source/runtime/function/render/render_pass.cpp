@@ -7,7 +7,7 @@
 
 Piccolo::VisiableNodes Piccolo::RenderPass::m_visiable_nodes;
 
-namespace Piccolo
+namespace Sammi
 {
     void RenderPass::initialize(const RenderPassInitInfo* init_info)
     {

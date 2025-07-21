@@ -1,5 +1,7 @@
 #pragma once
+
 #include "generator/generator.h"
+
 namespace Generator
 {
     class ReflectionGenerator : public GeneratorInterface
@@ -19,4 +21,4 @@ namespace Generator
         std::vector<std::string> m_head_file_list;
         std::vector<std::string> m_sourcefile_list;
     };
-} // namespace Generator
+}

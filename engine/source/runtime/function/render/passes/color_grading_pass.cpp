@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-namespace Piccolo
+namespace Sammi
 {
     void ColorGradingPass::initialize(const RenderPassInitInfo* init_info)
     {

@@ -20,9 +20,9 @@
 
 #define LOG_FATAL(...) LOG_HELPER(LogSystem::LogLevel::fatal, __VA_ARGS__);
 
-#define PolitSleep(_ms) std::this_thread::sleep_for(std::chrono::milliseconds(_ms));
+#define SammiSleep(_ms) std::this_thread::sleep_for(std::chrono::milliseconds(_ms));
 
-#define PolitNameOf(name) #name
+#define SammiNameOf(name) #name
 
 #ifdef NDEBUG
 #define ASSERT(statement)

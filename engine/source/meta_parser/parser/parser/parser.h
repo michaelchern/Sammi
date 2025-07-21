@@ -1,12 +1,9 @@
 #pragma once
 
 #include "common/precompiled.h"
-
 #include "common/namespace.h"
 #include "common/schema_module.h"
-
 #include "cursor/cursor.h"
-
 #include "generator/generator.h"
 #include "template_manager/template_manager.h"
 

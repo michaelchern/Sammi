@@ -1,6 +1,6 @@
 
 # PackageProject.cmake will be used to make our target installable
-set(TARGET_NAME PiccoloRuntime)
+set(TARGET_NAME SammiRuntime)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -105,4 +105,4 @@ string(TOLOWER ${TARGET_NAME}/version.h VERSION_HEADER_LOCATION)
 
 ### precompile
 # set global vari used by precompile
-set(PICCOLO_RUNTIME_HEADS "${HEADER_FILES}" PARENT_SCOPE)
+set(SAMMI_RUNTIME_HEADS "${HEADER_FILES}" PARENT_SCOPE)

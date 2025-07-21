@@ -5,7 +5,7 @@
 
 #include <cassert>
 
-namespace Piccolo
+namespace Sammi
 {
     class Matrix3x3;
     class Vector3;

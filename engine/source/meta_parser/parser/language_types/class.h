@@ -1,7 +1,6 @@
 #pragma once
 
 #include "type_info.h"
-
 #include "field.h"
 #include "method.h"
 

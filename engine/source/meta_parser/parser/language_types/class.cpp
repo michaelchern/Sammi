@@ -1,5 +1,4 @@
 #include "common/precompiled.h"
-
 #include "class.h"
 
 BaseClass::BaseClass(const Cursor& cursor) : name(Utils::getTypeNameWithoutNamespace(cursor.getType())) {}

@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace Piccolo
+namespace Sammi
 {
     class VulkanRHI;
 

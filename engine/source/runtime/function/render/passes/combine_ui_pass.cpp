@@ -8,7 +8,7 @@
 
 #include <stdexcept>
 
-namespace Piccolo
+namespace Sammi
 {
     void CombineUIPass::initialize(const RenderPassInitInfo* init_info)
     {
@@ -276,4 +276,4 @@ namespace Piccolo
 
         m_rhi->popEvent(m_rhi->getCurrentCommandBuffer());
     }
-} // namespace Piccolo
+}

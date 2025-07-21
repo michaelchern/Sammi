@@ -2,7 +2,7 @@
 
 #include "runtime/function/render/render_pass.h"
 
-namespace Piccolo
+namespace Sammi
 {
     struct ToneMappingPassInitInfo : RenderPassInitInfo
     {
@@ -23,4 +23,4 @@ namespace Piccolo
         void setupPipelines();
         void setupDescriptorSet();
     };
-} // namespace Piccolo
+}

@@ -2,7 +2,7 @@
 
 #include "runtime/function/render/interface/rhi.h"
 
-namespace Piccolo
+namespace Sammi
 {
     class RHI;
     class RenderResourceBase;

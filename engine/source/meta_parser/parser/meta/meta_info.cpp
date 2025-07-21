@@ -1,7 +1,5 @@
 ﻿#include "common/precompiled.h"
-
 #include "parser/parser.h"
-
 #include "meta_info.h"
 
 MetaInfo::MetaInfo(const Cursor& cursor)

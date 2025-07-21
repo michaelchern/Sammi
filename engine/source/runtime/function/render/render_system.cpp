@@ -65,13 +65,12 @@ namespace Sammi
 
         // -------------------- 步骤3：初始化渲染相机 --------------------
         const CameraPose& camera_pose = global_rendering_res.m_camera_config.m_pose;              // 获取相机位姿（位置、朝向、上向量）
-        m_render_camera               = std::make_shared<RenderCamera>();                         // 创建渲染相机实例
+        m_render_camera = std::make_shared<RenderCamera>();                                       // 创建渲染相机实例
         m_render_camera->lookAt(camera_pose.m_position, camera_pose.m_target, camera_pose.m_up);  // 设置相机朝向
         m_render_camera->m_zfar  = global_rendering_res.m_camera_config.m_z_far;                  // 设置相机远裁剪面
         m_render_camera->m_znear = global_rendering_res.m_camera_config.m_z_near;                 // 设置相机近裁剪面
         // 设置相机宽高比（根据配置的宽高比）
-        m_render_camera->setAspect(global_rendering_res.m_camera_config.m_aspect.x /
-                                   global_rendering_res.m_camera_config.m_aspect.y);
+        m_render_camera->setAspect(global_rendering_res.m_camera_config.m_aspect.x / global_rendering_res.m_camera_config.m_aspect.y);
 
         // -------------------- 步骤4：初始化渲染场景 --------------------
         // 创建渲染场景实例
@@ -87,12 +86,12 @@ namespace Sammi
 
         // -------------------- 步骤5：初始化渲染管线 --------------------
         RenderPipelineInitInfo pipeline_init_info;
-        pipeline_init_info.enable_fxaa     = global_rendering_res.m_enable_fxaa;  // 启用FXAA抗锯齿
-        pipeline_init_info.render_resource = m_render_resource;                   // 关联渲染资源
+        pipeline_init_info.enable_fxaa = global_rendering_res.m_enable_fxaa;  // 启用FXAA抗锯齿
+        pipeline_init_info.render_resource = m_render_resource;               // 关联渲染资源
 
-        m_render_pipeline        = std::make_shared<RenderPipeline>();            // 创建渲染管线实例
-        m_render_pipeline->m_rhi = m_rhi;                                         // 关联RHI实例
-        m_render_pipeline->initialize(pipeline_init_info);                        // 初始化渲染管线（创建渲染通道、描述符集等）
+        m_render_pipeline = std::make_shared<RenderPipeline>();               // 创建渲染管线实例
+        m_render_pipeline->m_rhi = m_rhi;                                     // 关联RHI实例
+        m_render_pipeline->initialize(pipeline_init_info);                    // 初始化渲染管线（创建渲染通道、描述符集等）
 
         // 设置主相机通道的描述符集布局（用于后续资源绑定）
         // 网格（Mesh）的描述符集布局（用于绑定顶点/索引缓冲区、统一缓冲区等）

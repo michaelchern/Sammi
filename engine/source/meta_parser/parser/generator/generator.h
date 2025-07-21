@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <string>
+
 namespace Generator
 {
     class GeneratorInterface
@@ -31,4 +32,4 @@ namespace Generator
         std::string                             m_root_path;
         std::function<std::string(std::string)> m_get_include_func;
     };
-} // namespace Generator
+}

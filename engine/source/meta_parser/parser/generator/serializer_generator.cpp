@@ -105,4 +105,4 @@ namespace Generator
     }
 
     SerializerGenerator::~SerializerGenerator() {}
-} // namespace Generator
+}

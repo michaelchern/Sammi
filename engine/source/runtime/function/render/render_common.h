@@ -3,7 +3,6 @@
 #include "runtime/core/math/matrix4.h"
 #include "runtime/core/math/vector3.h"
 #include "runtime/core/math/vector4.h"
-
 #include "runtime/function/render/render_type.h"
 #include "interface/rhi.h"
 
@@ -12,31 +11,41 @@
 
 namespace Sammi
 {
-    static const uint32_t s_point_light_shadow_map_dimension       = 2048;
+    // ---------------------- 全局常量定义 ----------------------
+    // 点光源阴影贴图分辨率（2048x2048）
+    static const uint32_t s_point_light_shadow_map_dimension = 2048;
+    // 平行光阴影贴图分辨率（4096x4096，更高分辨率用于更清晰的阴影）
     static const uint32_t s_directional_light_shadow_map_dimension = 4096;
 
-    // TODO: 64 may not be the best
+    // 每帧绘制调用最大实例数（限制实例化渲染的批量大小，平衡性能与灵活性）
     static uint32_t const s_mesh_per_drawcall_max_instance_count = 64;
+    // 顶点混合最大关节数（限制骨骼动画的复杂度，避免矩阵计算过载）
     static uint32_t const s_mesh_vertex_blending_max_joint_count = 1024;
-    static uint32_t const s_max_point_light_count                = 15;
-    // should sync the macros in "shader_include/constants.h"
+    // 场景中最大点光源数量（受限于GPU缓冲区大小和着色器处理能力）
+    static uint32_t const s_max_point_light_count = 15;
+    // 注意：需与"shader_include/constants.h"中的宏同步（确保CPU/GPU常量一致）
 
+    // ---------------------- 场景光照结构体 ----------------------
+    // Vulkan场景用平行光（方向光）数据结构（适配GPU缓冲区布局）
     struct VulkanSceneDirectionalLight
     {
-        Vector3 direction;
-        float   _padding_direction;
-        Vector3 color;
-        float   _padding_color;
+        Vector3 direction;              // 光照方向（单位向量，通常指向光源相反方向，如太阳光方向）
+        float   _padding_direction; // 填充字段（确保后续成员内存对齐）
+        Vector3 color;// 光的颜色（RGB分量，通常已归一化或包含亮度信息）
+        float   _padding_color;// 填充字段（内存对齐）
     };
 
+    // Vulkan场景用点光源数据结构（适配GPU缓冲区布局）
     struct VulkanScenePointLight
     {
-        Vector3 position;
-        float   radius;
-        Vector3 intensity;
-        float   _padding_intensity;
+        Vector3 position;// 光源在世界空间中的位置（三维坐标）
+        float   radius;// 光照有效半径（超出此半径的光被剔除）
+        Vector3 intensity;// 辐射强度（单位：W/sr，各向同性光源各方向强度相同）
+        float   _padding_intensity;// 填充字段（内存对齐）
     };
 
+    // ---------------------- 每帧全局数据（SSBO） ----------------------
+    // 每帧更新的网格渲染全局存储缓冲区对象（供着色器访问）
     struct MeshPerframeStorageBufferObject
     {
         Matrix4x4                   proj_view_matrix;

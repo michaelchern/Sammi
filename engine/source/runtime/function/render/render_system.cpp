@@ -1,10 +1,7 @@
-#include "runtime/function/render/render_system.h"
-
+ï»¿#include "runtime/function/render/render_system.h"
 #include "runtime/core/base/macro.h"
-
 #include "runtime/resource/asset_manager/asset_manager.h"
 #include "runtime/resource/config_manager/config_manager.h"
-
 #include "runtime/function/render/render_camera.h"
 #include "runtime/function/render/render_pass.h"
 #include "runtime/function/render/render_pipeline.h"
@@ -14,10 +11,8 @@
 #include "runtime/function/render/window_system.h"
 #include "runtime/function/global/global_context.h"
 #include "runtime/function/render/debugdraw/debug_draw_manager.h"
-
 #include "runtime/function/render/passes/main_camera_pass.h"
 #include "runtime/function/render/passes/particle_pass.h"
-
 #include "runtime/function/render/interface/vulkan/vulkan_rhi.h"
 
 namespace Sammi
@@ -29,110 +24,110 @@ namespace Sammi
 
     void RenderSystem::initialize(RenderSystemInitInfo init_info)
     {
-        // »ñÈ¡È«¾Ö×ÊÔ´¹ÜÀíÆ÷£¨ÅäÖÃ¹ÜÀíÆ÷ºÍ×Ê²ú¼ÓÔØÆ÷£©
+        // è·å–å…¨å±€èµ„æºç®¡ç†å™¨ï¼ˆé…ç½®ç®¡ç†å™¨å’Œèµ„äº§åŠ è½½å™¨ï¼‰
         std::shared_ptr<ConfigManager> config_manager = g_runtime_global_context.m_config_manager;
         ASSERT(config_manager);
         std::shared_ptr<AssetManager> asset_manager = g_runtime_global_context.m_asset_manager;
         ASSERT(asset_manager);
 
-        // -------------------- ²½Öè1£º³õÊ¼»¯RHI£¨äÖÈ¾Ó²¼ş½Ó¿Ú£© --------------------
+        // -------------------- æ­¥éª¤1ï¼šåˆå§‹åŒ–RHIï¼ˆæ¸²æŸ“ç¡¬ä»¶æ¥å£ï¼‰ --------------------
         RHIInitInfo rhi_init_info;
-        rhi_init_info.window_system = init_info.window_system;  // ÉèÖÃ´°¿ÚÏµÍ³£¨ÓÃÓÚ´´½¨½»»»Á´/´°¿Ú£©
-        m_rhi = std::make_shared<VulkanRHI>();                  // ´´½¨VulkanÊµÏÖ
-        m_rhi->initialize(rhi_init_info);                       // ³õÊ¼»¯Vulkan£¨´´½¨ÊµÀı/Éè±¸/¶ÓÁĞµÈ£©
+        rhi_init_info.window_system = init_info.window_system;  // è®¾ç½®çª—å£ç³»ç»Ÿï¼ˆç”¨äºåˆ›å»ºäº¤æ¢é“¾/çª—å£ï¼‰
+        m_rhi = std::make_shared<VulkanRHI>();                  // åˆ›å»ºVulkanå®ç°
+        m_rhi->initialize(rhi_init_info);                       // åˆå§‹åŒ–Vulkanï¼ˆåˆ›å»ºå®ä¾‹/è®¾å¤‡/é˜Ÿåˆ—ç­‰ï¼‰
 
-        // -------------------- ²½Öè2£º¼ÓÔØÈ«¾ÖäÖÈ¾×ÊÔ´ --------------------
-        // ¼ÓÔØÈ«¾Ö×ÊÔ´µ½ÁÙÊ±½á¹¹Ìå
+        // -------------------- æ­¥éª¤2ï¼šåŠ è½½å…¨å±€æ¸²æŸ“èµ„æº --------------------
+        // åŠ è½½å…¨å±€èµ„æºåˆ°ä¸´æ—¶ç»“æ„ä½“
         GlobalRenderingRes global_rendering_res;
-        // ´ÓÅäÖÃ»ñÈ¡È«¾ÖäÖÈ¾×ÊÔ´Â·¾¶£¨ÈçIBLÌùÍ¼¡¢ÑÕÉ«·Ö¼¶±íµÈ£©
+        // ä»é…ç½®è·å–å…¨å±€æ¸²æŸ“èµ„æºè·¯å¾„ï¼ˆå¦‚IBLè´´å›¾ã€é¢œè‰²åˆ†çº§è¡¨ç­‰ï¼‰
         const std::string& global_rendering_res_url = config_manager->getGlobalRenderingResUrl();
         asset_manager->loadAsset(global_rendering_res_url, global_rendering_res);
 
-        // ÉÏ´«È«¾ÖäÖÈ¾×ÊÔ´µ½GPU£¨ÈçIBL»·¾³ÌùÍ¼¡¢BRDF»ı·ÖÍ¼¡¢ÑÕÉ«·Ö¼¶LUT£©
+        // ä¸Šä¼ å…¨å±€æ¸²æŸ“èµ„æºåˆ°GPUï¼ˆå¦‚IBLç¯å¢ƒè´´å›¾ã€BRDFç§¯åˆ†å›¾ã€é¢œè‰²åˆ†çº§LUTï¼‰
         LevelResourceDesc level_resource_desc;
-        // Ìì¿ÕºĞ·øÕÕ¶ÈÌùÍ¼£¨ÓÃÓÚ»·¾³¹âÕÕ¼ÆËã£©
+        // å¤©ç©ºç›’è¾ç…§åº¦è´´å›¾ï¼ˆç”¨äºç¯å¢ƒå…‰ç…§è®¡ç®—ï¼‰
         level_resource_desc.m_ibl_resource_desc.m_skybox_irradiance_map = global_rendering_res.m_skybox_irradiance_map;
-        // Ìì¿ÕºĞÔ¤¹ıÂËÌùÍ¼£¨ÓÃÓÚ»·¾³·´Éä¼ÆËã£©
+        // å¤©ç©ºç›’é¢„è¿‡æ»¤è´´å›¾ï¼ˆç”¨äºç¯å¢ƒåå°„è®¡ç®—ï¼‰
         level_resource_desc.m_ibl_resource_desc.m_skybox_specular_map = global_rendering_res.m_skybox_specular_map;
-        // BRDF»ı·ÖÍ¼£¨ÓÃÓÚPBR²ÄÖÊ¼ÆËã£©
+        // BRDFç§¯åˆ†å›¾ï¼ˆç”¨äºPBRæè´¨è®¡ç®—ï¼‰
         level_resource_desc.m_ibl_resource_desc.m_brdf_map = global_rendering_res.m_brdf_map;
-        // ÑÕÉ«·Ö¼¶ÌùÍ¼£¨ÓÃÓÚºóÆÚ´¦ÀíÑÕÉ«µ÷Õû£©
+        // é¢œè‰²åˆ†çº§è´´å›¾ï¼ˆç”¨äºåæœŸå¤„ç†é¢œè‰²è°ƒæ•´ï¼‰
         level_resource_desc.m_color_grading_resource_desc.m_color_grading_map = global_rendering_res.m_color_grading_map;
         
-        // ´´½¨äÖÈ¾×ÊÔ´¹ÜÀíÆ÷²¢ÉÏ´«È«¾Ö×ÊÔ´µ½GPU
+        // åˆ›å»ºæ¸²æŸ“èµ„æºç®¡ç†å™¨å¹¶ä¸Šä¼ å…¨å±€èµ„æºåˆ°GPU
         m_render_resource = std::make_shared<RenderResource>();
         m_render_resource->uploadGlobalRenderResource(m_rhi, level_resource_desc);
 
-        // -------------------- ²½Öè3£º³õÊ¼»¯äÖÈ¾Ïà»ú --------------------
-        const CameraPose& camera_pose = global_rendering_res.m_camera_config.m_pose;              // »ñÈ¡Ïà»úÎ»×Ë£¨Î»ÖÃ¡¢³¯Ïò¡¢ÉÏÏòÁ¿£©
-        m_render_camera = std::make_shared<RenderCamera>();                                       // ´´½¨äÖÈ¾Ïà»úÊµÀı
-        m_render_camera->lookAt(camera_pose.m_position, camera_pose.m_target, camera_pose.m_up);  // ÉèÖÃÏà»ú³¯Ïò
-        m_render_camera->m_zfar  = global_rendering_res.m_camera_config.m_z_far;                  // ÉèÖÃÏà»úÔ¶²Ã¼ôÃæ
-        m_render_camera->m_znear = global_rendering_res.m_camera_config.m_z_near;                 // ÉèÖÃÏà»ú½ü²Ã¼ôÃæ
-        // ÉèÖÃÏà»ú¿í¸ß±È£¨¸ù¾İÅäÖÃµÄ¿í¸ß±È£©
+        // -------------------- æ­¥éª¤3ï¼šåˆå§‹åŒ–æ¸²æŸ“ç›¸æœº --------------------
+        const CameraPose& camera_pose = global_rendering_res.m_camera_config.m_pose;              // è·å–ç›¸æœºä½å§¿ï¼ˆä½ç½®ã€æœå‘ã€ä¸Šå‘é‡ï¼‰
+        m_render_camera = std::make_shared<RenderCamera>();                                       // åˆ›å»ºæ¸²æŸ“ç›¸æœºå®ä¾‹
+        m_render_camera->lookAt(camera_pose.m_position, camera_pose.m_target, camera_pose.m_up);  // è®¾ç½®ç›¸æœºæœå‘
+        m_render_camera->m_zfar  = global_rendering_res.m_camera_config.m_z_far;                  // è®¾ç½®ç›¸æœºè¿œè£å‰ªé¢
+        m_render_camera->m_znear = global_rendering_res.m_camera_config.m_z_near;                 // è®¾ç½®ç›¸æœºè¿‘è£å‰ªé¢
+        // è®¾ç½®ç›¸æœºå®½é«˜æ¯”ï¼ˆæ ¹æ®é…ç½®çš„å®½é«˜æ¯”ï¼‰
         m_render_camera->setAspect(global_rendering_res.m_camera_config.m_aspect.x / global_rendering_res.m_camera_config.m_aspect.y);
 
-        // -------------------- ²½Öè4£º³õÊ¼»¯äÖÈ¾³¡¾° --------------------
-        // ´´½¨äÖÈ¾³¡¾°ÊµÀı
+        // -------------------- æ­¥éª¤4ï¼šåˆå§‹åŒ–æ¸²æŸ“åœºæ™¯ --------------------
+        // åˆ›å»ºæ¸²æŸ“åœºæ™¯å®ä¾‹
         m_render_scene = std::make_shared<RenderScene>();
-        // ÉèÖÃ»·¾³¹âÑÕÉ«£¨´ÓÈ«¾ÖÅäÖÃ»ñÈ¡£©
+        // è®¾ç½®ç¯å¢ƒå…‰é¢œè‰²ï¼ˆä»å…¨å±€é…ç½®è·å–ï¼‰
         m_render_scene->m_ambient_light = { global_rendering_res.m_ambient_light.toVector3() };
-        // ÉèÖÃÆ½ĞĞ¹â·½Ïò£¨¹éÒ»»¯ÏòÁ¿£©
+        // è®¾ç½®å¹³è¡Œå…‰æ–¹å‘ï¼ˆå½’ä¸€åŒ–å‘é‡ï¼‰
         m_render_scene->m_directional_light.m_direction = global_rendering_res.m_directional_light.m_direction.normalisedCopy();
-        // ÉèÖÃÆ½ĞĞ¹âÑÕÉ«£¨´ÓÈ«¾ÖÅäÖÃ»ñÈ¡£©
+        // è®¾ç½®å¹³è¡Œå…‰é¢œè‰²ï¼ˆä»å…¨å±€é…ç½®è·å–ï¼‰
         m_render_scene->m_directional_light.m_color = global_rendering_res.m_directional_light.m_color.toVector3();
-        // ³õÊ¼»¯¿É¼û¶ÔÏóÒıÓÃ£¨ÓÃÓÚºóĞø¿É¼ûĞÔ¼ÆËã£©
+        // åˆå§‹åŒ–å¯è§å¯¹è±¡å¼•ç”¨ï¼ˆç”¨äºåç»­å¯è§æ€§è®¡ç®—ï¼‰
         m_render_scene->setVisibleNodesReference();
 
-        // -------------------- ²½Öè5£º³õÊ¼»¯äÖÈ¾¹ÜÏß --------------------
+        // -------------------- æ­¥éª¤5ï¼šåˆå§‹åŒ–æ¸²æŸ“ç®¡çº¿ --------------------
         RenderPipelineInitInfo pipeline_init_info;
-        pipeline_init_info.enable_fxaa = global_rendering_res.m_enable_fxaa;  // ÆôÓÃFXAA¿¹¾â³İ
-        pipeline_init_info.render_resource = m_render_resource;               // ¹ØÁªäÖÈ¾×ÊÔ´
+        pipeline_init_info.enable_fxaa = global_rendering_res.m_enable_fxaa;  // å¯ç”¨FXAAæŠ—é”¯é½¿
+        pipeline_init_info.render_resource = m_render_resource;               // å…³è”æ¸²æŸ“èµ„æº
 
-        m_render_pipeline = std::make_shared<RenderPipeline>();               // ´´½¨äÖÈ¾¹ÜÏßÊµÀı
-        m_render_pipeline->m_rhi = m_rhi;                                     // ¹ØÁªRHIÊµÀı
-        m_render_pipeline->initialize(pipeline_init_info);                    // ³õÊ¼»¯äÖÈ¾¹ÜÏß£¨´´½¨äÖÈ¾Í¨µÀ¡¢ÃèÊö·û¼¯µÈ£©
+        m_render_pipeline = std::make_shared<RenderPipeline>();               // åˆ›å»ºæ¸²æŸ“ç®¡çº¿å®ä¾‹
+        m_render_pipeline->m_rhi = m_rhi;                                     // å…³è”RHIå®ä¾‹
+        m_render_pipeline->initialize(pipeline_init_info);                    // åˆå§‹åŒ–æ¸²æŸ“ç®¡çº¿ï¼ˆåˆ›å»ºæ¸²æŸ“é€šé“ã€æè¿°ç¬¦é›†ç­‰ï¼‰
 
-        // ÉèÖÃÖ÷Ïà»úÍ¨µÀµÄÃèÊö·û¼¯²¼¾Ö£¨ÓÃÓÚºóĞø×ÊÔ´°ó¶¨£©
-        // Íø¸ñ£¨Mesh£©µÄÃèÊö·û¼¯²¼¾Ö£¨ÓÃÓÚ°ó¶¨¶¥µã/Ë÷Òı»º³åÇø¡¢Í³Ò»»º³åÇøµÈ£©
+        // è®¾ç½®ä¸»ç›¸æœºé€šé“çš„æè¿°ç¬¦é›†å¸ƒå±€ï¼ˆç”¨äºåç»­èµ„æºç»‘å®šï¼‰
+        // ç½‘æ ¼ï¼ˆMeshï¼‰çš„æè¿°ç¬¦é›†å¸ƒå±€ï¼ˆç”¨äºç»‘å®šé¡¶ç‚¹/ç´¢å¼•ç¼“å†²åŒºã€ç»Ÿä¸€ç¼“å†²åŒºç­‰ï¼‰
         std::static_pointer_cast<RenderResource>(m_render_resource)->m_mesh_descriptor_set_layout     = &static_cast<RenderPass*>(m_render_pipeline->m_main_camera_pass.get())->m_descriptor_infos[MainCameraPass::LayoutType::_per_mesh].layout;
         std::static_pointer_cast<RenderResource>(m_render_resource)->m_material_descriptor_set_layout =&static_cast<RenderPass*>(m_render_pipeline->m_main_camera_pass.get())->m_descriptor_infos[MainCameraPass::LayoutType::_mesh_per_material].layout;
     }
 
     void RenderSystem::tick(float delta_time)
     {
-        // ´¦ÀíÂß¼­ÓëäÖÈ¾ÉÏÏÂÎÄµÄ½»»»Êı¾İ£¨Èç¼ÓÔØĞÂ×ÊÔ´¡¢É¾³ı¾É¶ÔÏó£©
+        // å¤„ç†é€»è¾‘ä¸æ¸²æŸ“ä¸Šä¸‹æ–‡çš„äº¤æ¢æ•°æ®ï¼ˆå¦‚åŠ è½½æ–°èµ„æºã€åˆ é™¤æ—§å¯¹è±¡ï¼‰
         processSwapData();
 
-        // ×¼±¸äÖÈ¾ÃüÁîÉÏÏÂÎÄ£¨¿ªÊ¼ÃüÁî»º³åÇøÂ¼ÖÆ£©
+        // å‡†å¤‡æ¸²æŸ“å‘½ä»¤ä¸Šä¸‹æ–‡ï¼ˆå¼€å§‹å‘½ä»¤ç¼“å†²åŒºå½•åˆ¶ï¼‰
         m_rhi->prepareContext();
 
-        // ¸üĞÂÃ¿Ö¡»º³åÇø£¨ÈçÏà»úµÄÊÓÍ¼Í¶Ó°¾ØÕó¡¢¹âÕÕ²ÎÊıµÈ£©
+        // æ›´æ–°æ¯å¸§ç¼“å†²åŒºï¼ˆå¦‚ç›¸æœºçš„è§†å›¾æŠ•å½±çŸ©é˜µã€å…‰ç…§å‚æ•°ç­‰ï¼‰
         m_render_resource->updatePerFrameBuffer(m_render_scene, m_render_camera);
 
-        // ¸üĞÂµ±Ç°Ö¡¿É¼ûµÄ¶ÔÏó£¨»ùÓÚÏà»úÊÓ×¶Ìå²Ã¼ô£©
+        // æ›´æ–°å½“å‰å¸§å¯è§çš„å¯¹è±¡ï¼ˆåŸºäºç›¸æœºè§†é”¥ä½“è£å‰ªï¼‰
         m_render_scene->updateVisibleObjects(std::static_pointer_cast<RenderResource>(m_render_resource), m_render_camera);
 
-        // ×¼±¸äÖÈ¾¹ÜÏßµÄ¸÷Í¨µÀÊı¾İ£¨ÈçÉèÖÃäÖÈ¾Ä¿±ê¡¢°ó¶¨ÃèÊö·û¼¯µÈ£©
+        // å‡†å¤‡æ¸²æŸ“ç®¡çº¿çš„å„é€šé“æ•°æ®ï¼ˆå¦‚è®¾ç½®æ¸²æŸ“ç›®æ ‡ã€ç»‘å®šæè¿°ç¬¦é›†ç­‰ï¼‰
         m_render_pipeline->preparePassData(m_render_resource);
 
-        // ¸üĞÂµ÷ÊÔ»æÖÆ¹ÜÀíÆ÷£¨»æÖÆ¸¨ÖúÏß¡¢×ø±êÖáµÈ£©
+        // æ›´æ–°è°ƒè¯•ç»˜åˆ¶ç®¡ç†å™¨ï¼ˆç»˜åˆ¶è¾…åŠ©çº¿ã€åæ ‡è½´ç­‰ï¼‰
         g_runtime_global_context.m_debugdraw_manager->tick(delta_time);
 
-        // ¸ù¾İµ±Ç°äÖÈ¾¹ÜÏßÀàĞÍÖ´ĞĞäÖÈ¾£¨Ç°ÏòäÖÈ¾»òÑÓ³ÙäÖÈ¾£©
+        // æ ¹æ®å½“å‰æ¸²æŸ“ç®¡çº¿ç±»å‹æ‰§è¡Œæ¸²æŸ“ï¼ˆå‰å‘æ¸²æŸ“æˆ–å»¶è¿Ÿæ¸²æŸ“ï¼‰
         if (m_render_pipeline_type == RENDER_PIPELINE_TYPE::FORWARD_PIPELINE)
         {
-            // Ç°ÏòäÖÈ¾Á÷³Ì
+            // å‰å‘æ¸²æŸ“æµç¨‹
             m_render_pipeline->forwardRender(m_rhi, m_render_resource);
         }
         else if (m_render_pipeline_type == RENDER_PIPELINE_TYPE::DEFERRED_PIPELINE)
         {
-            // ÑÓ³ÙäÖÈ¾Á÷³Ì
+            // å»¶è¿Ÿæ¸²æŸ“æµç¨‹
             m_render_pipeline->deferredRender(m_rhi, m_render_resource);
         }
         else
         {
-            // ²»Ö§³ÖµÄ¹ÜÏßÀàĞÍ±¨´í
+            // ä¸æ”¯æŒçš„ç®¡çº¿ç±»å‹æŠ¥é”™
             LOG_ERROR(__FUNCTION__, "unsupported render pipeline type");
         }
     }
@@ -174,7 +169,7 @@ namespace Sammi
 
     void RenderSystem::updateEngineContentViewport(float offset_x, float offset_y, float width, float height)
     {
-        // ¸üĞÂVulkan RHIµÄÊÓ¿Ú²ÎÊı
+        // æ›´æ–°Vulkan RHIçš„è§†å£å‚æ•°
         std::static_pointer_cast<VulkanRHI>(m_rhi)->m_viewport.x        = offset_x;
         std::static_pointer_cast<VulkanRHI>(m_rhi)->m_viewport.y        = offset_y;
         std::static_pointer_cast<VulkanRHI>(m_rhi)->m_viewport.width    = width;
@@ -182,11 +177,11 @@ namespace Sammi
         std::static_pointer_cast<VulkanRHI>(m_rhi)->m_viewport.minDepth = 0.0f;
         std::static_pointer_cast<VulkanRHI>(m_rhi)->m_viewport.maxDepth = 1.0f;
 
-        // ¸üĞÂÏà»ú¿í¸ß±È£¨Ó°ÏìÍ¶Ó°¾ØÕó£©
+        // æ›´æ–°ç›¸æœºå®½é«˜æ¯”ï¼ˆå½±å“æŠ•å½±çŸ©é˜µï¼‰
         m_render_camera->setAspect(width / height);
     }
 
-    // »ñÈ¡µ±Ç°ÒıÇæÄÚÈİÊÓ¿Ú²ÎÊı
+    // è·å–å½“å‰å¼•æ“å†…å®¹è§†å£å‚æ•°
     EngineContentViewport RenderSystem::getEngineContentViewport() const
     {
         float x      = std::static_pointer_cast<VulkanRHI>(m_rhi)->m_viewport.x;
@@ -196,35 +191,35 @@ namespace Sammi
         return { x, y, width, height };
     }
 
-    // »ñÈ¡±»Ñ¡ÖĞÍø¸ñµÄGUID£¨È«¾ÖÎ¨Ò»±êÊ¶·û£©
+    // è·å–è¢«é€‰ä¸­ç½‘æ ¼çš„GUIDï¼ˆå…¨å±€å”¯ä¸€æ ‡è¯†ç¬¦ï¼‰
     uint32_t RenderSystem::getGuidOfPickedMesh(const Vector2& picked_uv)
     {
         return m_render_pipeline->getGuidOfPickedMesh(picked_uv);
     }
 
-    // ¸ù¾İÍø¸ñID»ñÈ¡¶ÔÓ¦µÄÓÎÏ·¶ÔÏóID
+    // æ ¹æ®ç½‘æ ¼IDè·å–å¯¹åº”çš„æ¸¸æˆå¯¹è±¡ID
     GObjectID RenderSystem::getGObjectIDByMeshID(uint32_t mesh_id) const
     {
         return m_render_scene->getGObjectIDByMeshID(mesh_id);
     }
 
-    // ´´½¨×ø±êÖá¸¨Öú¶ÔÏó£¨X/Y/ZÖá¿ÉÊÓ»¯£©
+    // åˆ›å»ºåæ ‡è½´è¾…åŠ©å¯¹è±¡ï¼ˆX/Y/Zè½´å¯è§†åŒ–ï¼‰
     void RenderSystem::createAxis(std::array<RenderEntity, 3> axis_entities, std::array<RenderMeshData, 3> mesh_datas)
     {
         for (int i = 0; i < axis_entities.size(); i++)
         {
-            // ÎªÃ¿¸öÖáÊµÌåÉÏ´«äÖÈ¾×ÊÔ´£¨Íø¸ñ¡¢²ÄÖÊµÈ£©µ½GPU
+            // ä¸ºæ¯ä¸ªè½´å®ä½“ä¸Šä¼ æ¸²æŸ“èµ„æºï¼ˆç½‘æ ¼ã€æè´¨ç­‰ï¼‰åˆ°GPU
             m_render_resource->uploadGameObjectRenderResource(m_rhi, axis_entities[i], mesh_datas[i]);
         }
     }
 
-    // ÉèÖÃ×ø±êÖáµÄ¿É¼û×´Ì¬£¨ÏÔÊ¾/Òş²Ø£©
+    // è®¾ç½®åæ ‡è½´çš„å¯è§çŠ¶æ€ï¼ˆæ˜¾ç¤º/éšè—ï¼‰
     void RenderSystem::setVisibleAxis(std::optional<RenderEntity> axis)
     {
-        // ¸üĞÂ³¡¾°ÖĞµÄ×ø±êÖáÊµÌå
+        // æ›´æ–°åœºæ™¯ä¸­çš„åæ ‡è½´å®ä½“
         m_render_scene->m_render_axis = axis;
 
-        // Í¨¹ıäÖÈ¾¹ÜÏßÉèÖÃ×ø±êÖáµÄ¿É¼û×´Ì¬
+        // é€šè¿‡æ¸²æŸ“ç®¡çº¿è®¾ç½®åæ ‡è½´çš„å¯è§çŠ¶æ€
         if (axis.has_value())
         {
             std::static_pointer_cast<RenderPipeline>(m_render_pipeline)->setAxisVisibleState(true);
@@ -235,44 +230,44 @@ namespace Sammi
         }
     }
 
-    // ÉèÖÃµ±Ç°Ñ¡ÖĞµÄ×ø±êÖá£¨0:X, 1:Y, 2:Z£©
+    // è®¾ç½®å½“å‰é€‰ä¸­çš„åæ ‡è½´ï¼ˆ0:X, 1:Y, 2:Zï¼‰
     void RenderSystem::setSelectedAxis(size_t selected_axis)
     {
         std::static_pointer_cast<RenderPipeline>(m_render_pipeline)->setSelectedAxis(selected_axis);
     }
 
-    // »ñÈ¡ÓÎÏ·¶ÔÏóÊµÀıID·ÖÅäÆ÷£¨ÓÃÓÚ¹ÜÀí¶¯Ì¬Éú³ÉµÄÊµÀıID£©
+    // è·å–æ¸¸æˆå¯¹è±¡å®ä¾‹IDåˆ†é…å™¨ï¼ˆç”¨äºç®¡ç†åŠ¨æ€ç”Ÿæˆçš„å®ä¾‹IDï¼‰
     GuidAllocator<GameObjectPartId>& RenderSystem::getGOInstanceIdAllocator()
     {
-        // ·µ»Ø³¡¾°µÄÊµÀıID·ÖÅäÆ÷
+        // è¿”å›åœºæ™¯çš„å®ä¾‹IDåˆ†é…å™¨
         return m_render_scene->getInstanceIdAllocator();
     }
 
-    // »ñÈ¡Íø¸ñ×ÊÔ´ID·ÖÅäÆ÷£¨ÓÃÓÚ¹ÜÀíÍø¸ñ×Ê²úµÄÎ¨Ò»±êÊ¶£©
+    // è·å–ç½‘æ ¼èµ„æºIDåˆ†é…å™¨ï¼ˆç”¨äºç®¡ç†ç½‘æ ¼èµ„äº§çš„å”¯ä¸€æ ‡è¯†ï¼‰
     GuidAllocator<MeshSourceDesc>& RenderSystem::getMeshAssetIdAllocator()
     {
         return m_render_scene->getMeshAssetIdAllocator();
     }
 
-    // ÇåÀí¹Ø¿¨ÖØĞÂ¼ÓÔØËùĞèµÄÊı¾İ£¨ÒÆ³ıµ±Ç°¹Ø¿¨ËùÓĞ¶ÔÏó£©
+    // æ¸…ç†å…³å¡é‡æ–°åŠ è½½æ‰€éœ€çš„æ•°æ®ï¼ˆç§»é™¤å½“å‰å…³å¡æ‰€æœ‰å¯¹è±¡ï¼‰
     void RenderSystem::clearForLevelReloading()
     {
         m_render_scene->clearForLevelReloading();
     }
 
-    // ÉèÖÃµ±Ç°äÖÈ¾¹ÜÏßÀàĞÍ£¨Ç°Ïò/ÑÓ³Ù£©
+    // è®¾ç½®å½“å‰æ¸²æŸ“ç®¡çº¿ç±»å‹ï¼ˆå‰å‘/å»¶è¿Ÿï¼‰
     void RenderSystem::setRenderPipelineType(RENDER_PIPELINE_TYPE pipeline_type)
     {
         m_render_pipeline_type = pipeline_type;
     }
 
-    // ³õÊ¼»¯UIäÖÈ¾ºó¶Ë£¨¹ØÁªUI´°¿Ú£©
+    // åˆå§‹åŒ–UIæ¸²æŸ“åç«¯ï¼ˆå…³è”UIçª—å£ï¼‰
     void RenderSystem::initializeUIRenderBackend(WindowUI* window_ui)
     {
         m_render_pipeline->initializeUIRenderBackend(window_ui);
     }
 
-    // ´¦ÀíÂß¼­ÓëäÖÈ¾ÉÏÏÂÎÄµÄ½»»»Êı¾İ£¨¹Ø¼üÊı¾İÍ¬²½º¯Êı£©
+    // å¤„ç†é€»è¾‘ä¸æ¸²æŸ“ä¸Šä¸‹æ–‡çš„äº¤æ¢æ•°æ®ï¼ˆå…³é”®æ•°æ®åŒæ­¥å‡½æ•°ï¼‰
     void RenderSystem::processSwapData()
     {
         RenderSwapData& swap_data = m_swap_context.getRenderSwapData();
@@ -280,82 +275,82 @@ namespace Sammi
         std::shared_ptr<AssetManager> asset_manager = g_runtime_global_context.m_asset_manager;
         ASSERT(asset_manager);
 
-        // -------------------- ²½Öè1£º¸üĞÂÈ«¾Ö×ÊÔ´£¨Èç¹Ø¿¨IBLÌùÍ¼£© --------------------
+        // -------------------- æ­¥éª¤1ï¼šæ›´æ–°å…¨å±€èµ„æºï¼ˆå¦‚å…³å¡IBLè´´å›¾ï¼‰ --------------------
         if (swap_data.m_level_resource_desc.has_value())
         {
-            // ÉÏ´«ĞÂµÄÈ«¾Ö×ÊÔ´µ½GPU
+            // ä¸Šä¼ æ–°çš„å…¨å±€èµ„æºåˆ°GPU
             m_render_resource->uploadGlobalRenderResource(m_rhi, *swap_data.m_level_resource_desc);
 
-            // ÖØÖÃ½»»»Êı¾İ×´Ì¬£¨±ê¼ÇÎªÒÑ´¦Àí£©
+            // é‡ç½®äº¤æ¢æ•°æ®çŠ¶æ€ï¼ˆæ ‡è®°ä¸ºå·²å¤„ç†ï¼‰
             m_swap_context.resetLevelRsourceSwapData();
         }
 
-        // -------------------- ²½Öè2£º´¦ÀíÓÎÏ·¶ÔÏó×ÊÔ´£¨¼ÓÔØ/¸üĞÂÍø¸ñ¡¢²ÄÖÊ£© --------------------
+        // -------------------- æ­¥éª¤2ï¼šå¤„ç†æ¸¸æˆå¯¹è±¡èµ„æºï¼ˆåŠ è½½/æ›´æ–°ç½‘æ ¼ã€æè´¨ï¼‰ --------------------
         if (swap_data.m_game_object_resource_desc.has_value())
         {
-            // Ñ­»·´¦ÀíËùÓĞ´ı´¦ÀíµÄÓÎÏ·¶ÔÏó
+            // å¾ªç¯å¤„ç†æ‰€æœ‰å¾…å¤„ç†çš„æ¸¸æˆå¯¹è±¡
             while (!swap_data.m_game_object_resource_desc->isEmpty())
             {
                 GameObjectDesc gobject = swap_data.m_game_object_resource_desc->getNextProcessObject();
 
-                // ±éÀú¶ÔÏóµÄÃ¿¸ö²¿¼ş£¨ÈçÄ£ĞÍ²»Í¬²¿·Ö£©
+                // éå†å¯¹è±¡çš„æ¯ä¸ªéƒ¨ä»¶ï¼ˆå¦‚æ¨¡å‹ä¸åŒéƒ¨åˆ†ï¼‰
                 for (size_t part_index = 0; part_index < gobject.getObjectParts().size(); part_index++)
                 {
-                    // µ±Ç°²¿¼şÃèÊö
+                    // å½“å‰éƒ¨ä»¶æè¿°
                     const auto& game_object_part = gobject.getObjectParts()[part_index];
-                    // ²¿¼şÎ¨Ò»ID£¨¶ÔÏóID+²¿¼şË÷Òı£©
+                    // éƒ¨ä»¶å”¯ä¸€IDï¼ˆå¯¹è±¡ID+éƒ¨ä»¶ç´¢å¼•ï¼‰
                     GameObjectPartId part_id = { gobject.getId(), part_index };
 
-                    // ¼ì²é¸Ã²¿¼şÊÇ·ñÒÑÔÚ³¡¾°ÖĞ´æÔÚ£¨Í¨¹ıÊµÀıID·ÖÅäÆ÷ÅĞ¶Ï£©
+                    // æ£€æŸ¥è¯¥éƒ¨ä»¶æ˜¯å¦å·²åœ¨åœºæ™¯ä¸­å­˜åœ¨ï¼ˆé€šè¿‡å®ä¾‹IDåˆ†é…å™¨åˆ¤æ–­ï¼‰
                     bool is_entity_in_scene = m_render_scene->getInstanceIdAllocator().hasElement(part_id);
 
-                    // äÖÈ¾ÊµÌå£¨´æ´¢äÖÈ¾ËùĞèÊı¾İ£©
+                    // æ¸²æŸ“å®ä½“ï¼ˆå­˜å‚¨æ¸²æŸ“æ‰€éœ€æ•°æ®ï¼‰
                     RenderEntity render_entity;
-                    // ·ÖÅäÊµÀıID£¨Èô²»´æÔÚÔòĞÂ½¨£¬Èô´æÔÚÔò¸´ÓÃ£©
+                    // åˆ†é…å®ä¾‹IDï¼ˆè‹¥ä¸å­˜åœ¨åˆ™æ–°å»ºï¼Œè‹¥å­˜åœ¨åˆ™å¤ç”¨ï¼‰
                     render_entity.m_instance_id = static_cast<uint32_t>(m_render_scene->getInstanceIdAllocator().allocGuid(part_id));
-                    // ÉèÖÃÄ£ĞÍµÄÊÀ½ç±ä»»¾ØÕó£¨´Ó²¿¼şÃèÊö»ñÈ¡£©
+                    // è®¾ç½®æ¨¡å‹çš„ä¸–ç•Œå˜æ¢çŸ©é˜µï¼ˆä»éƒ¨ä»¶æè¿°è·å–ï¼‰
                     render_entity.m_model_matrix = game_object_part.m_transform_desc.m_transform_matrix;
 
-                    // ¼ÇÂ¼ÊµÀıIDµ½ÓÎÏ·¶ÔÏóIDµÄÓ³Éä£¨ÓÃÓÚºóĞø²éÕÒ£©
+                    // è®°å½•å®ä¾‹IDåˆ°æ¸¸æˆå¯¹è±¡IDçš„æ˜ å°„ï¼ˆç”¨äºåç»­æŸ¥æ‰¾ï¼‰
                     m_render_scene->addInstanceIdToMap(render_entity.m_instance_id, gobject.getId());
 
-                    // -------------------- ´¦ÀíÍø¸ñ×ÊÔ´ --------------------
-                    // Íø¸ñ×ÊÔ´ÃèÊö£¨ÎÄ¼şÂ·¾¶£©
+                    // -------------------- å¤„ç†ç½‘æ ¼èµ„æº --------------------
+                    // ç½‘æ ¼èµ„æºæè¿°ï¼ˆæ–‡ä»¶è·¯å¾„ï¼‰
                     MeshSourceDesc mesh_source = { game_object_part.m_mesh_desc.m_mesh_file };
-                    // ¼ì²éÍø¸ñÊÇ·ñÒÑ¼ÓÔØ£¨Í¨¹ı³¡¾°µÄÍø¸ñ×Ê²ú·ÖÅäÆ÷£©
+                    // æ£€æŸ¥ç½‘æ ¼æ˜¯å¦å·²åŠ è½½ï¼ˆé€šè¿‡åœºæ™¯çš„ç½‘æ ¼èµ„äº§åˆ†é…å™¨ï¼‰
                     bool is_mesh_loaded = m_render_scene->getMeshAssetIdAllocator().hasElement(mesh_source);
 
-                    // Íø¸ñäÖÈ¾Êı¾İ£¨¶¥µã/Ë÷Òı»º³åÇøµÈ£©
+                    // ç½‘æ ¼æ¸²æŸ“æ•°æ®ï¼ˆé¡¶ç‚¹/ç´¢å¼•ç¼“å†²åŒºç­‰ï¼‰
                     RenderMeshData mesh_data;
                     if (!is_mesh_loaded)
                     {
-                        // ¼ÓÔØĞÂÍø¸ñ£¨´ÓÎÄ¼ş¶ÁÈ¡²¢ÉÏ´«µ½GPU£©
+                        // åŠ è½½æ–°ç½‘æ ¼ï¼ˆä»æ–‡ä»¶è¯»å–å¹¶ä¸Šä¼ åˆ°GPUï¼‰
                         mesh_data = m_render_resource->loadMeshData(mesh_source, render_entity.m_bounding_box);
                     }
                     else
                     {
-                        // ÒÑ¼ÓÔØÔò»ñÈ¡»º´æµÄ°üÎ§ºĞ£¨ÓÃÓÚÅö×²¼ì²â¡¢ÊÓ×¶Ìå²Ã¼ô£©
+                        // å·²åŠ è½½åˆ™è·å–ç¼“å­˜çš„åŒ…å›´ç›’ï¼ˆç”¨äºç¢°æ’æ£€æµ‹ã€è§†é”¥ä½“è£å‰ªï¼‰
                         render_entity.m_bounding_box = m_render_resource->getCachedBoudingBox(mesh_source);
                     }
 
-                    // ·ÖÅäÍø¸ñ×ÊÔ´ID£¨ÈôÎ´¼ÓÔØÔòĞÂ½¨£¬·ñÔò¸´ÓÃ£©
+                    // åˆ†é…ç½‘æ ¼èµ„æºIDï¼ˆè‹¥æœªåŠ è½½åˆ™æ–°å»ºï¼Œå¦åˆ™å¤ç”¨ï¼‰
                     render_entity.m_mesh_asset_id = m_render_scene->getMeshAssetIdAllocator().allocGuid(mesh_source);
 
-                    // ÉèÖÃ¶¥µã»ìºÏÊôĞÔ£¨Èô²¿¼şÓĞ¹ØÁªµÄ¹Ç÷À¶¯»­£©
+                    // è®¾ç½®é¡¶ç‚¹æ··åˆå±æ€§ï¼ˆè‹¥éƒ¨ä»¶æœ‰å…³è”çš„éª¨éª¼åŠ¨ç”»ï¼‰
                     render_entity.m_enable_vertex_blending = game_object_part.m_skeleton_animation_result.m_transforms.size() > 1;
-                    // ´æ´¢¹Ç÷À¶¯»­µÄ±ä»»¾ØÕó£¨Ã¿Ö¡¸üĞÂ£©
+                    // å­˜å‚¨éª¨éª¼åŠ¨ç”»çš„å˜æ¢çŸ©é˜µï¼ˆæ¯å¸§æ›´æ–°ï¼‰
                     render_entity.m_joint_matrices.resize(game_object_part.m_skeleton_animation_result.m_transforms.size());
                     for (size_t i = 0; i < game_object_part.m_skeleton_animation_result.m_transforms.size(); ++i)
                     {
                         render_entity.m_joint_matrices[i] = game_object_part.m_skeleton_animation_result.m_transforms[i].m_matrix;
                     }
 
-                    // -------------------- ´¦Àí²ÄÖÊ×ÊÔ´ --------------------
-                    // ²ÄÖÊ×ÊÔ´ÃèÊö£¨ÎÆÀíÎÄ¼şÂ·¾¶£©
+                    // -------------------- å¤„ç†æè´¨èµ„æº --------------------
+                    // æè´¨èµ„æºæè¿°ï¼ˆçº¹ç†æ–‡ä»¶è·¯å¾„ï¼‰
                     MaterialSourceDesc material_source;
                     if (game_object_part.m_material_desc.m_with_texture)
                     {
-                        // ×Ô¶¨Òå²ÄÖÊ£ºÊ¹ÓÃÅäÖÃµÄÎÆÀíÂ·¾¶
+                        // è‡ªå®šä¹‰æè´¨ï¼šä½¿ç”¨é…ç½®çš„çº¹ç†è·¯å¾„
                         material_source = { game_object_part.m_material_desc.m_base_color_texture_file,
                                            game_object_part.m_material_desc.m_metallic_roughness_texture_file,
                                            game_object_part.m_material_desc.m_normal_texture_file,
@@ -364,51 +359,51 @@ namespace Sammi
                     }
                     else
                     {
-                        // Ä¬ÈÏ²ÄÖÊ£ºÊ¹ÓÃÒıÇæÄÚÖÃµÄÄ¬ÈÏÎÆÀí£¨ÂÁ²­¡¢·¨ÏßµÈ£©
+                        // é»˜è®¤æè´¨ï¼šä½¿ç”¨å¼•æ“å†…ç½®çš„é»˜è®¤çº¹ç†ï¼ˆé“ç®”ã€æ³•çº¿ç­‰ï¼‰
                         material_source = {
                             asset_manager->getFullPath("asset/texture/default/albedo.jpg").generic_string(),
                             asset_manager->getFullPath("asset/texture/default/mr.jpg").generic_string(),
                             asset_manager->getFullPath("asset/texture/default/normal.jpg").generic_string(),
-                            "",// ÎŞAOÎÆÀí
-                            ""};// ÎŞ×Ô·¢¹âÎÆÀí
+                            "",// æ— AOçº¹ç†
+                            ""};// æ— è‡ªå‘å…‰çº¹ç†
                     }
 
-                    // ¼ì²é²ÄÖÊÊÇ·ñÒÑ¼ÓÔØ£¨Í¨¹ı³¡¾°µÄ²ÄÖÊ×Ê²ú·ÖÅäÆ÷£©
+                    // æ£€æŸ¥æè´¨æ˜¯å¦å·²åŠ è½½ï¼ˆé€šè¿‡åœºæ™¯çš„æè´¨èµ„äº§åˆ†é…å™¨ï¼‰
                     bool is_material_loaded = m_render_scene->getMaterialAssetdAllocator().hasElement(material_source);
 
-                    // ²ÄÖÊäÖÈ¾Êı¾İ£¨×ÅÉ«Æ÷²ÎÊı¡¢²ÉÑùÆ÷µÈ£©
+                    // æè´¨æ¸²æŸ“æ•°æ®ï¼ˆç€è‰²å™¨å‚æ•°ã€é‡‡æ ·å™¨ç­‰ï¼‰
                     RenderMaterialData material_data;
                     if (!is_material_loaded)
                     {
-                        // ¼ÓÔØĞÂ²ÄÖÊ£¨±àÒë×ÅÉ«Æ÷¡¢ÉÏ´«ÎÆÀíµ½GPU£©
+                        // åŠ è½½æ–°æè´¨ï¼ˆç¼–è¯‘ç€è‰²å™¨ã€ä¸Šä¼ çº¹ç†åˆ°GPUï¼‰
                         material_data = m_render_resource->loadMaterialData(material_source);
                     }
 
-                    // ·ÖÅä²ÄÖÊ×ÊÔ´ID£¨ÈôÎ´¼ÓÔØÔòĞÂ½¨£¬·ñÔò¸´ÓÃ£©
+                    // åˆ†é…æè´¨èµ„æºIDï¼ˆè‹¥æœªåŠ è½½åˆ™æ–°å»ºï¼Œå¦åˆ™å¤ç”¨ï¼‰
                     render_entity.m_material_asset_id = m_render_scene->getMaterialAssetdAllocator().allocGuid(material_source);
 
-                    // -------------------- ÉÏ´«äÖÈ¾ÊµÌåµ½GPU --------------------
-                    // ÈôÍø¸ñÎ´¼ÓÔØ£ºÉÏ´«Íø¸ñÊı¾İµ½GPU£¨´´½¨»º³åÇø£©
+                    // -------------------- ä¸Šä¼ æ¸²æŸ“å®ä½“åˆ°GPU --------------------
+                    // è‹¥ç½‘æ ¼æœªåŠ è½½ï¼šä¸Šä¼ ç½‘æ ¼æ•°æ®åˆ°GPUï¼ˆåˆ›å»ºç¼“å†²åŒºï¼‰
                     if (!is_mesh_loaded)
                     {
                         m_render_resource->uploadGameObjectRenderResource(m_rhi, render_entity, mesh_data);
                     }
 
-                    // Èô²ÄÖÊÎ´¼ÓÔØ£ºÉÏ´«²ÄÖÊÊı¾İµ½GPU£¨´´½¨ÃèÊö·û¼¯£©
+                    // è‹¥æè´¨æœªåŠ è½½ï¼šä¸Šä¼ æè´¨æ•°æ®åˆ°GPUï¼ˆåˆ›å»ºæè¿°ç¬¦é›†ï¼‰
                     if (!is_material_loaded)
                     {
                         m_render_resource->uploadGameObjectRenderResource(m_rhi, render_entity, material_data);
                     }
 
-                    // -------------------- ¸üĞÂ³¡¾°ÖĞµÄäÖÈ¾ÊµÌåÁĞ±í --------------------
-                    // Èô¶ÔÏó²»ÔÚ³¡¾°ÖĞ£ºÌí¼ÓĞÂÊµÌåµ½³¡¾°ÁĞ±í
+                    // -------------------- æ›´æ–°åœºæ™¯ä¸­çš„æ¸²æŸ“å®ä½“åˆ—è¡¨ --------------------
+                    // è‹¥å¯¹è±¡ä¸åœ¨åœºæ™¯ä¸­ï¼šæ·»åŠ æ–°å®ä½“åˆ°åœºæ™¯åˆ—è¡¨
                     if (!is_entity_in_scene)
                     {
                         m_render_scene->m_render_entities.push_back(render_entity);
                     }
                     else
                     {
-                        // Èô¶ÔÏóÒÑ´æÔÚ£º¸üĞÂÏÖÓĞÊµÌåµÄÊı¾İ£¨Èç±ä»»¾ØÕó¡¢²ÄÖÊµÈ£©
+                        // è‹¥å¯¹è±¡å·²å­˜åœ¨ï¼šæ›´æ–°ç°æœ‰å®ä½“çš„æ•°æ®ï¼ˆå¦‚å˜æ¢çŸ©é˜µã€æè´¨ç­‰ï¼‰
                         for (auto& entity : m_render_scene->m_render_entities)
                         {
                             if (entity.m_instance_id == render_entity.m_instance_id)
@@ -419,66 +414,66 @@ namespace Sammi
                         }
                     }
                 }
-                // ´¦ÀíÍêµ±Ç°ÓÎÏ·¶ÔÏóµÄËùÓĞ²¿¼şºó£¬´Ó½»»»Êı¾İÖĞÒÆ³ı¸Ã¶ÔÏó
+                // å¤„ç†å®Œå½“å‰æ¸¸æˆå¯¹è±¡çš„æ‰€æœ‰éƒ¨ä»¶åï¼Œä»äº¤æ¢æ•°æ®ä¸­ç§»é™¤è¯¥å¯¹è±¡
                 swap_data.m_game_object_resource_desc->pop();
             }
 
-            // ÖØÖÃÓÎÏ·¶ÔÏó½»»»Êı¾İ×´Ì¬£¨±ê¼ÇÎªÎŞ´ı´¦Àí¶ÔÏó£©
+            // é‡ç½®æ¸¸æˆå¯¹è±¡äº¤æ¢æ•°æ®çŠ¶æ€ï¼ˆæ ‡è®°ä¸ºæ— å¾…å¤„ç†å¯¹è±¡ï¼‰
             m_swap_context.resetGameObjectResourceSwapData();
         }
 
-        // -------------------- ²½Öè3£ºÉ¾³ı²»ÔÙĞèÒªµÄÓÎÏ·¶ÔÏó --------------------
+        // -------------------- æ­¥éª¤3ï¼šåˆ é™¤ä¸å†éœ€è¦çš„æ¸¸æˆå¯¹è±¡ --------------------
         if (swap_data.m_game_object_to_delete.has_value())
         {
-            // Ñ­»·´¦ÀíËùÓĞ´ıÉ¾³ıµÄ¶ÔÏó
+            // å¾ªç¯å¤„ç†æ‰€æœ‰å¾…åˆ é™¤çš„å¯¹è±¡
             while (!swap_data.m_game_object_to_delete->isEmpty())
             {
                 GameObjectDesc gobject = swap_data.m_game_object_to_delete->getNextProcessObject();
-                // ´Ó³¡¾°ÖĞÉ¾³ı¸Ã¶ÔÏó£¨ÒÆ³ıËùÓĞÏà¹ØÊµÌå£©
+                // ä»åœºæ™¯ä¸­åˆ é™¤è¯¥å¯¹è±¡ï¼ˆç§»é™¤æ‰€æœ‰ç›¸å…³å®ä½“ï¼‰
                 m_render_scene->deleteEntityByGObjectID(gobject.getId());
                 swap_data.m_game_object_to_delete->pop();
             }
-            // ÖØÖÃÉ¾³ı½»»»Êı¾İ×´Ì¬
+            // é‡ç½®åˆ é™¤äº¤æ¢æ•°æ®çŠ¶æ€
             m_swap_context.resetGameObjectToDelete();
         }
 
-        // -------------------- ²½Öè4£º´¦ÀíÏà»úÊı¾İ½»»»£¨¸üĞÂÏà»ú²ÎÊı£© --------------------
+        // -------------------- æ­¥éª¤4ï¼šå¤„ç†ç›¸æœºæ•°æ®äº¤æ¢ï¼ˆæ›´æ–°ç›¸æœºå‚æ•°ï¼‰ --------------------
         if (swap_data.m_camera_swap_data.has_value())
         {
-            // ¸üĞÂÏà»úµÄFOV£¨Ë®Æ½ÊÓ½Ç£©
+            // æ›´æ–°ç›¸æœºçš„FOVï¼ˆæ°´å¹³è§†è§’ï¼‰
             if (swap_data.m_camera_swap_data->m_fov_x.has_value())
             {
                 m_render_camera->setFOVx(*swap_data.m_camera_swap_data->m_fov_x);
             }
 
-            // ¸üĞÂÏà»úµÄÊÓÍ¼¾ØÕó£¨ÊÀ½ç->ÊÓÍ¼±ä»»£©
+            // æ›´æ–°ç›¸æœºçš„è§†å›¾çŸ©é˜µï¼ˆä¸–ç•Œ->è§†å›¾å˜æ¢ï¼‰
             if (swap_data.m_camera_swap_data->m_view_matrix.has_value())
             {
                 m_render_camera->setMainViewMatrix(*swap_data.m_camera_swap_data->m_view_matrix);
             }
 
-            // ¸üĞÂÏà»úÀàĞÍ£¨ÈçÍ¸ÊÓÍ¶Ó°¡¢Õı½»Í¶Ó°£©
+            // æ›´æ–°ç›¸æœºç±»å‹ï¼ˆå¦‚é€è§†æŠ•å½±ã€æ­£äº¤æŠ•å½±ï¼‰
             if (swap_data.m_camera_swap_data->m_camera_type.has_value())
             {
                 m_render_camera->setCurrentCameraType(*swap_data.m_camera_swap_data->m_camera_type);
             }
 
-            // ´¦ÀíÍêÏà»úÊı¾İºó£¬ÖØÖÃ½»»»Êı¾İ×´Ì¬
+            // å¤„ç†å®Œç›¸æœºæ•°æ®åï¼Œé‡ç½®äº¤æ¢æ•°æ®çŠ¶æ€
             m_swap_context.resetCameraSwapData();
         }
 
-        // -------------------- ²½Öè5£º´¦ÀíÁ£×Ó·¢ÉäÇëÇó --------------------
+        // -------------------- æ­¥éª¤5ï¼šå¤„ç†ç²’å­å‘å°„è¯·æ±‚ --------------------
         if (swap_data.m_particle_submit_request.has_value())
         {
-            // »ñÈ¡Á£×ÓÍ¨µÀ£¨¸ºÔğÁ£×ÓÏµÍ³äÖÈ¾µÄ×ÓÏµÍ³£©
+            // è·å–ç²’å­é€šé“ï¼ˆè´Ÿè´£ç²’å­ç³»ç»Ÿæ¸²æŸ“çš„å­ç³»ç»Ÿï¼‰
             std::shared_ptr<ParticlePass> particle_pass = std::static_pointer_cast<ParticlePass>(m_render_pipeline->m_particle_pass);
 
-            // »ñÈ¡·¢ÉäÆ÷ÊıÁ¿
+            // è·å–å‘å°„å™¨æ•°é‡
             int emitter_count = swap_data.m_particle_submit_request->getEmitterCount();
-            // ÉèÖÃ·¢ÉäÆ÷ÊıÁ¿
+            // è®¾ç½®å‘å°„å™¨æ•°é‡
             particle_pass->setEmitterCount(emitter_count);
 
-            // ±éÀúËùÓĞ·¢ÉäÆ÷£¬´´½¨²¢³õÊ¼»¯
+            // éå†æ‰€æœ‰å‘å°„å™¨ï¼Œåˆ›å»ºå¹¶åˆå§‹åŒ–
             for (int index = 0; index < emitter_count; ++index)
             {
                 const ParticleEmitterDesc& desc = swap_data.m_particle_submit_request->getEmitterDesc(index);
@@ -490,16 +485,16 @@ namespace Sammi
             m_swap_context.resetPartilceBatchSwapData();
         }
 
-        // -------------------- ²½Öè6£º´¦ÀíÁ£×Ó·¢ÉäÆ÷¸üĞÂÇëÇó --------------------
+        // -------------------- æ­¥éª¤6ï¼šå¤„ç†ç²’å­å‘å°„å™¨æ›´æ–°è¯·æ±‚ --------------------
         if (swap_data.m_emitter_tick_request.has_value())
         {
-            // ÉèÖÃĞèÒª¸üĞÂµÄ·¢ÉäÆ÷Ë÷Òı£¨Ã¿Ö¡¸üĞÂÖ¸¶¨·¢ÉäÆ÷µÄ×´Ì¬£©
+            // è®¾ç½®éœ€è¦æ›´æ–°çš„å‘å°„å™¨ç´¢å¼•ï¼ˆæ¯å¸§æ›´æ–°æŒ‡å®šå‘å°„å™¨çš„çŠ¶æ€ï¼‰
             std::static_pointer_cast<ParticlePass>(m_render_pipeline->m_particle_pass)
                 ->setTickIndices(swap_data.m_emitter_tick_request->m_emitter_indices);
             m_swap_context.resetEmitterTickSwapData();
         }
 
-        // -------------------- ²½Öè7£º´¦ÀíÁ£×Ó·¢ÉäÆ÷±ä»»ÇëÇó --------------------
+        // -------------------- æ­¥éª¤7ï¼šå¤„ç†ç²’å­å‘å°„å™¨å˜æ¢è¯·æ±‚ --------------------
         if (swap_data.m_emitter_transform_request.has_value())
         {
             std::static_pointer_cast<ParticlePass>(m_render_pipeline->m_particle_pass)

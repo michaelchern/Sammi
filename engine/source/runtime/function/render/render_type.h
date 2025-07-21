@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "runtime/core/base/hash.h"
 
@@ -1683,12 +1683,14 @@ namespace Sammi
 
 namespace Sammi
 {
+    // 图像类型枚举类，定义支持的图像格式类型
     enum class SAMMI_IMAGE_TYPE : uint8_t
     {
         SAMMI_IMAGE_TYPE_UNKNOWM = 0,
         SAMMI_IMAGE_TYPE_2D
     };
 
+    // 渲染管线类型枚举类，定义支持的渲染管线类型
     enum class RENDER_PIPELINE_TYPE : uint8_t
     {
         FORWARD_PIPELINE = 0,
@@ -1696,6 +1698,7 @@ namespace Sammi
         PIPELINE_TYPE_COUNT
     };
 
+    // 缓冲区数据类，管理通用缓冲区内存（如顶点/索引缓冲区）
     class BufferData
     {
     public:
@@ -1703,11 +1706,13 @@ namespace Sammi
         void*  m_data {nullptr};
 
         BufferData() = delete;
+
         BufferData(size_t size)
         {
             m_size = size;
             m_data = malloc(size);
         }
+
         ~BufferData()
         {
             if (m_data)
@@ -1715,23 +1720,27 @@ namespace Sammi
                 free(m_data);
             }
         }
+
         bool isValid() const { return m_data != nullptr; }
     };
 
+    // 纹理数据类，管理纹理图像数据（如颜色/法线/金属度纹理）
     class TextureData
     {
     public:
-        uint32_t m_width {0};
-        uint32_t m_height {0};
-        uint32_t m_depth {0};
-        uint32_t m_mip_levels {0};
-        uint32_t m_array_layers {0};
-        void*    m_pixels {nullptr};
+        uint32_t m_width {0};         // 纹理宽度（像素）
+        uint32_t m_height {0};        // 纹理高度（像素）
+        uint32_t m_depth {0};         // 纹理深度（3D纹理时使用，默认0表示2D）
+        uint32_t m_mip_levels {0};    // MIP贴图级别数（多级渐远纹理，用于优化采样）
+        uint32_t m_array_layers {0};  // 纹理数组层数（用于纹理数组）
+        void*    m_pixels {nullptr};  // 指向纹理像素数据的指针（RGBA等格式）
 
+        // 纹理像素格式（如R8G8B8A8_UNORM）
         RHIFormat m_format = RHI_FORMAT_MAX_ENUM;
-        PICCOLO_IMAGE_TYPE   m_type { PICCOLO_IMAGE_TYPE::PICCOLO_IMAGE_TYPE_UNKNOWM};
+        SAMMI_IMAGE_TYPE m_type{ SAMMI_IMAGE_TYPE::SAMMI_IMAGE_TYPE_UNKNOWM };
 
         TextureData() = default;
+
         ~TextureData()
         {
             if (m_pixels)
@@ -1739,17 +1748,21 @@ namespace Sammi
                 free(m_pixels);
             }
         }
+
         bool isValid() const { return m_pixels != nullptr; }
     };
 
+    // 网格顶点数据定义结构体，描述单个顶点的所有属性
     struct MeshVertexDataDefinition
     {
-        float x, y, z;    // position
-        float nx, ny, nz; // normal
-        float tx, ty, tz; // tangent
-        float u, v;       // UV coordinates
+        float x, y, z;     // 顶点位置坐标（世界空间或模型空间）
+        float nx, ny, nz;  // 顶点法线向量（用于光照计算）
+        float tx, ty, tz;  // 顶点切线向量（用于法线贴图计算）
+        float u, v;        // UV坐标（纹理采样坐标，范围[0,1]）
     };
 
+    // 网格顶点绑定数据定义结构体，用于骨骼蒙皮（Skeletal Mesh）
+    // 存储顶点受哪些骨骼影响及权重
     struct MeshVertexBindingDataDefinition
     {
         int m_index0 {0};
@@ -1763,22 +1776,29 @@ namespace Sammi
         float m_weight3 {0.f};
     };
 
+    // 网格资源描述结构体，用于标识网格文件的唯一性（用于资源管理）
     struct MeshSourceDesc
     {
+        // 网格模型文件路径（如.obj/.fbx）
         std::string m_mesh_file;
 
-        bool   operator==(const MeshSourceDesc& rhs) const { return m_mesh_file == rhs.m_mesh_file; }
+        // 相等运算符重载：用于判断两个网格描述是否指向同一文件
+        bool operator==(const MeshSourceDesc& rhs) const { return m_mesh_file == rhs.m_mesh_file; }
+
+        // 获取哈希值：用于将MeshSourceDesc作为键存入哈希容器（如unordered_map）
         size_t getHashValue() const { return std::hash<std::string> {}(m_mesh_file); }
     };
 
+    // 材质资源描述结构体，用于标识材质所需纹理文件的唯一性（用于资源管理）
     struct MaterialSourceDesc
     {
-        std::string m_base_color_file;
-        std::string m_metallic_roughness_file;
-        std::string m_normal_file;
-        std::string m_occlusion_file;
-        std::string m_emissive_file;
+        std::string m_base_color_file;          // 基础颜色纹理路径（RGB颜色）
+        std::string m_metallic_roughness_file;  // 金属度-粗糙度纹理路径（R=金属度, G=粗糙度）
+        std::string m_normal_file;// 法线贴图路径（RGB存储切线空间法线）
+        std::string m_occlusion_file;// 环境光遮蔽纹理路径（R存储遮蔽系数）
+        std::string m_emissive_file;  // 自发光纹理路径（RGB自发光颜色）
 
+        // 相等运算符重载：判断两个材质描述是否使用完全相同的纹理文件
         bool operator==(const MaterialSourceDesc& rhs) const
         {
             return m_base_color_file == rhs.m_base_color_file &&
@@ -1788,6 +1808,7 @@ namespace Sammi
                    m_emissive_file == rhs.m_emissive_file;
         }
 
+        // 计算哈希值：组合所有纹理路径的哈希，用于哈希容器
         size_t getHashValue() const
         {
             size_t hash = 0;
@@ -1801,28 +1822,36 @@ namespace Sammi
         }
     };
 
+    // 静态网格数据结构体，存储静态网格的GPU缓冲区资源
     struct StaticMeshData
     {
+        // 顶点缓冲区（存储MeshVertexDataDefinition）
         std::shared_ptr<BufferData> m_vertex_buffer;
+
+        // 索引缓冲区（存储三角形索引，uint32_t类型）
         std::shared_ptr<BufferData> m_index_buffer;
     };
 
+    // 渲染网格数据结构体，扩展静态网格以支持骨骼动画
     struct RenderMeshData
     {
-        StaticMeshData              m_static_mesh_data;
+        // 静态网格基础数据
+        StaticMeshData m_static_mesh_data;
+
+        // 骨骼绑定缓冲区（存储MeshVertexBindingDataDefinition）
         std::shared_ptr<BufferData> m_skeleton_binding_buffer;
     };
 
+    // 渲染材质数据结构体，存储材质所需的GPU纹理资源
     struct RenderMaterialData
     {
-        std::shared_ptr<TextureData> m_base_color_texture;
-        std::shared_ptr<TextureData> m_metallic_roughness_texture;
-        std::shared_ptr<TextureData> m_normal_texture;
-        std::shared_ptr<TextureData> m_occlusion_texture;
-        std::shared_ptr<TextureData> m_emissive_texture;
+        std::shared_ptr<TextureData> m_base_color_texture;          // 基础颜色纹理
+        std::shared_ptr<TextureData> m_metallic_roughness_texture;  // 金属度-粗糙度纹理
+        std::shared_ptr<TextureData> m_normal_texture;              // 法线贴图纹理
+        std::shared_ptr<TextureData> m_occlusion_texture;           // 环境光遮蔽纹理
+        std::shared_ptr<TextureData> m_emissive_texture;            // 自发光纹理
     };
 }
-
 
 template<>
 struct std::hash<Sammi::MeshSourceDesc>

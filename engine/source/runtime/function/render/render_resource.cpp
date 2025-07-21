@@ -423,16 +423,16 @@ namespace Sammi
             }
 
             // 金属-粗糙度纹理参数（类似基础颜色纹理的处理逻辑）
-            void* metallic_roughness_image_pixels = empty_image;
-            uint32_t           metallic_roughness_width = 1;
-            uint32_t           metallic_roughness_height = 1;
-            RHIFormat metallic_roughness_format = RHIFormat::RHI_FORMAT_R8G8B8A8_UNORM;
+            void*     metallic_roughness_image_pixels = empty_image;
+            uint32_t  metallic_roughness_width        = 1;
+            uint32_t  metallic_roughness_height       = 1;
+            RHIFormat metallic_roughness_format       = RHIFormat::RHI_FORMAT_R8G8B8A8_UNORM;
             if (material_data.m_metallic_roughness_texture)
             {
                 metallic_roughness_image_pixels = material_data.m_metallic_roughness_texture->m_pixels;
-                metallic_roughness_width = static_cast<uint32_t>(material_data.m_metallic_roughness_texture->m_width);
-                metallic_roughness_height = static_cast<uint32_t>(material_data.m_metallic_roughness_texture->m_height);
-                metallic_roughness_format = material_data.m_metallic_roughness_texture->m_format;
+                metallic_roughness_width        = static_cast<uint32_t>(material_data.m_metallic_roughness_texture->m_width);
+                metallic_roughness_height       = static_cast<uint32_t>(material_data.m_metallic_roughness_texture->m_height);
+                metallic_roughness_format       = material_data.m_metallic_roughness_texture->m_format;
             }
 
             // 法线-粗糙度纹理参数（注意：此处可能为笔误，通常法线纹理格式为 RGB，但按代码逻辑处理）
@@ -1270,4 +1270,4 @@ namespace Sammi
 
         static_assert(64 >= sizeof(MeshVertex::VulkanMeshVertexJointBinding), "");
     }
-} // namespace Piccolo
+}
